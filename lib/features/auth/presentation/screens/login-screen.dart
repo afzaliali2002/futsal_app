@@ -1,7 +1,7 @@
-// features/auth/presentation/screens/login_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../domain/repositories/auth_repository.dart';
 import '../view_models/login_view_model.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -10,7 +10,9 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => LoginViewModel(),
+      create: (context) => LoginViewModel(
+        context.read<AuthRepository>(),
+      ),
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
@@ -122,9 +124,9 @@ class LoginScreen extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: (){
-                          Navigator.pushReplacementNamed(context, '/app');
-                        },
+                        onPressed: viewModel.isValid
+                            ? ()=> viewModel.login(context)
+                            : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Theme.of(context).colorScheme.primary,
                           foregroundColor: Colors.black,

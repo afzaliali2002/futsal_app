@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import '../../../auth/presentation/screens/home_screen.dart';
 import '../../../auth/presentation/screens/notifications_screen.dart';
-import '../../../auth/presentation/screens/profile_screen.dart';
+import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../booking/presentation/screens/favorites_screen.dart';
 import '../../../futsal/presentation/screens/search_screen.dart';
 import '../widgets/custom_bottom_nav.dart';
