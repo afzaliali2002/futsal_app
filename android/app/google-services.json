@@ -1,0 +1,90 @@
+{
+  "project_info": {
+    "project_number": "318853381366",
+    "project_id": "futsal-app-f3f37",
+    "storage_bucket": "futsal-app-f3f37.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:318853381366:android:092d86b0af05ee3f6900d7",
+        "android_client_info": {
+          "package_name": "com.example.futsal"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "318853381366-pahaa91nkm82nhbnh671v382ik2e1ctd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.futsal",
+            "certificate_hash": "a8bf9837550be50c7617a386a02c40e433ed16ba"
+          }
+        },
+        {
+          "client_id": "318853381366-vqg8t72af57qp8jblo7u3557dm3a6f11.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_s4xTA_m-Ad_OQCQqqFstLvmS7_AjR8c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "318853381366-vqg8t72af57qp8jblo7u3557dm3a6f11.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "318853381366-6s30mes00vhbal4lh4upvlsvvfm8p5mj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.futsal"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:318853381366:android:a6009e6ee267c73a6900d7",
+        "android_client_info": {
+          "package_name": "com.example.futsal_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "318853381366-vqg8t72af57qp8jblo7u3557dm3a6f11.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_s4xTA_m-Ad_OQCQqqFstLvmS7_AjR8c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "318853381366-vqg8t72af57qp8jblo7u3557dm3a6f11.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "318853381366-6s30mes00vhbal4lh4upvlsvvfm8p5mj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.futsal"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
