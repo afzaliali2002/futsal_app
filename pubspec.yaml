@@ -14,6 +14,9 @@ dependencies:
   provider: ^6.1.2
   flutter_localizations:
     sdk: flutter
+  image_picker: ^1.1.2
+  firebase_storage: ^11.7.0
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:

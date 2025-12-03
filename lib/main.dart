@@ -13,7 +13,7 @@ import 'package:provider/provider.dart';
 // Firebase
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'features/auth/presentation/screens/splash_screen.dart';
+import 'features/profile/data/profile_repository_impl.dart';
 import 'firebase_options.dart';
 
 // Theme
@@ -34,7 +34,6 @@ import 'features/futsal/presentation/screens/field_detail_screen.dart';
 import 'features/booking/presentation/screens/booking_from_screen.dart';
 
 // Profile
-import 'features/profile/data/profile_repository_impl.dart';
 import 'features/profile/domain/repositories/profile_repository.dart';
 import 'features/profile/domain/usecases/get_current_user_usecase.dart';
 import 'features/profile/presentation/providers/profile_provider.dart';
@@ -100,9 +99,8 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
 
         // ROUTING
-        home: const SplashScreen(), // <-- Always start with SplashScreen
+        home: const AuthWrapper(), 
         routes: {
-          '/auth-wrapper':(context) => const AuthWrapper(),
           '/login': (context) => const LoginScreen(),
           '/signup': (context) => const SignupScreen(),
           '/home': (context) => const TabbedHomeScreen(),

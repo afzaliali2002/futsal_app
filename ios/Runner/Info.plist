@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+    <string>برای انتخاب عکس پروفایل، نیاز به دسترسی به گالری شما داریم.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>برای گرفتن عکس پروفایل، نیاز به دسترسی به دوربین شما داریم.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>برای ضبط ویدیو همراه با صدا، نیاز به دسترسی به میکروفون شما داریم.</string>
 </dict>
 </plist>

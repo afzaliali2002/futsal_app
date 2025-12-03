@@ -24,19 +24,34 @@ class FutsalFieldCard extends StatelessWidget {
           children: [
             AspectRatio(
               aspectRatio: 16 / 9,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                  color: Theme.of(context).dividerColor.withOpacity(0.1),
-                  // Later, we can use field.imageUrl here
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.sports_soccer,
-                    size: 48,
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
-                  ),
-                ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                child: field.imageUrl.isNotEmpty
+                    ? Image.network(
+                        field.imageUrl,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(child: CircularProgressIndicator());
+                        },
+                        errorBuilder: (context, error, stackTrace) => Center(
+                          child: Icon(
+                            Icons.broken_image,
+                            size: 48,
+                            color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+                          ),
+                        ),
+                      )
+                    : Container(
+                        color: Theme.of(context).dividerColor.withOpacity(0.1),
+                        child: Center(
+                          child: Icon(
+                            Icons.sports_soccer,
+                            size: 48,
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                          ),
+                        ),
+                      ),
               ),
             ),
             Padding(
