@@ -6,71 +6,20 @@ class SignUpViewModel extends ChangeNotifier {
 
   SignUpViewModel(this._authRepository);
 
-  String _email = '';
-  String _password = '';
-  String _confirmPassword = '';
+  // This ViewModel will now be simpler.
+  // The UI will handle controllers and loading state.
 
-  bool _isLoading = false;
-
-  bool get isLoading => _isLoading;
-
-  String get email => _email;
-  String get password => _password;
-  String get confirmPassword => _confirmPassword;
-
-  // Update Email
-  void setEmail(String value) {
-    _email = value.trim();
-    notifyListeners();
-  }
-
-  // Update Password
-  void setPassword(String value) {
-    _password = value;
-    notifyListeners();
-  }
-
-  // Update Confirm Password
-  void setConfirmPassword(String value) {
-    _confirmPassword = value;
-    notifyListeners();
-  }
-
-  // Password Match
-  bool get isPasswordConfirmed {
-    return _password == _confirmPassword;
-  }
-
-  // Form Valid
-  bool get isValid {
-    return _email.isNotEmpty &&
-        _email.contains('@') &&
-        _password.length >= 6 &&
-        isPasswordConfirmed;
-  }
-
-  // SIGN UP
-  Future<void> signUp(BuildContext context) async {
-    if (!isValid || _isLoading) return;
-
-    _isLoading = true;
-    notifyListeners();
-
+  Future<void> signUp({
+    required String email,
+    required String password,
+    required String name,
+  }) async {
+    // The use case for this will be created in the next refactoring step.
     try {
-      await _authRepository.signUp(_email, _password);
-
-      // Success → Go to Home Screen
-      Navigator.pushReplacementNamed(context, '/home');
-
+      await _authRepository.signUp(email, password, name);
     } catch (e) {
-      print("Signup error: $e");
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("خطا در ثبت‌نام: $e")),
-      );
+      // Re-throw the exception to be handled by the UI.
+      rethrow;
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 }

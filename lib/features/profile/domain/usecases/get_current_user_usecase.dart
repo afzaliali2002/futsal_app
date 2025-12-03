@@ -6,7 +6,7 @@ class GetCurrentUserUseCase {
 
   GetCurrentUserUseCase(this.repository);
 
-  Future<UserModel> call() async {
-    return await repository.getCurrentUser();
+  Future<UserModel> call() {
+    return repository.getCurrentUser();
   }
 }

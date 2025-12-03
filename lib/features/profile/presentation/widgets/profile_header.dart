@@ -8,44 +8,63 @@ class ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const SizedBox(height: 40),
-        CircleAvatar(
-          radius: 50,
-          backgroundImage: NetworkImage(user.avatarUrl),
-        ),
-        const SizedBox(height: 15),
-        Text(
-          user.name,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
+    final String avatar = user.avatarUrl.trim();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 40),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 50,
+            backgroundImage: avatar.isNotEmpty
+                ? NetworkImage(avatar)
+                : const AssetImage("assets/images/default_avatar.png")
+            as ImageProvider,
+            onBackgroundImageError: (_, __) {},
           ),
-        ),
-        Text(
-          user.email,
-          style: const TextStyle(color: Colors.grey),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.circle,
-              color: user.isOnline ? Colors.green : Colors.red,
-              size: 14,
+          const SizedBox(height: 15),
+
+          /// Name
+          Text(
+            user.name.isNotEmpty ? user.name : "نام ثبت نشده",
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(width: 5),
-            Text(
-              user.isOnline ? "آنلاین" : "آفلاین",
-              style: TextStyle(
+          ),
+
+          /// Email
+          Text(
+            user.email.isNotEmpty ? user.email : "ایمیل ثبت نشده",
+            style: const TextStyle(
+              color: Colors.grey,
+              fontSize: 14,
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          /// Online Status
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.circle,
+                size: 14,
                 color: user.isOnline ? Colors.green : Colors.red,
               ),
-            ),
-          ],
-        ),
-      ],
+              const SizedBox(width: 6),
+              Text(
+                user.isOnline ? "آنلاین" : "آفلاین",
+                style: TextStyle(
+                  color: user.isOnline ? Colors.green : Colors.red,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

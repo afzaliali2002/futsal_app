@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-
 import '../../domain/usecases/get_current_user_usecase.dart';
 import '../../data/models/user_model.dart';
 
 class ProfileProvider extends ChangeNotifier {
-  final GetCurrentUserUseCase getCurrentUser;
+  final GetCurrentUserUseCase getCurrentUserUseCase;
 
-  ProfileProvider(this.getCurrentUser);
+  ProfileProvider(this.getCurrentUserUseCase);
 
   UserModel? user;
   bool loading = false;
@@ -18,13 +17,12 @@ class ProfileProvider extends ChangeNotifier {
       error = null;
       notifyListeners();
 
-      user = await getCurrentUser();
-
+      user = await getCurrentUserUseCase();
     } catch (e) {
       error = e.toString();
+    } finally {
+      loading = false;
+      notifyListeners();
     }
-
-    loading = false;
-    notifyListeners();
   }
 }

@@ -13,9 +13,9 @@ class UserModel {
     required this.isOnline,
   });
 
-  factory UserModel.fromMap(Map<String, dynamic> map) {
+  factory UserModel.fromMap(Map<String, dynamic> map, String uid) {
     return UserModel(
-      uid: map['uid'] ?? '',
+      uid: uid,
       name: map['name'] ?? '',
       email: map['email'] ?? '',
       avatarUrl: map['avatarUrl'] ?? '',

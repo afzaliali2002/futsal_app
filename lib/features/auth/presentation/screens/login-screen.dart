@@ -1,6 +1,7 @@
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../view_models/login_view_model.dart';
 
@@ -10,204 +11,173 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => LoginViewModel(
-        context.read<AuthRepository>(),
-      ),
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Consumer<LoginViewModel>(
-              builder: (context, viewModel, child) {
-                return ListView(
-                  padding: const EdgeInsets.only(top: 60, bottom: 40),
-                  children: [
-                    // Soccer Ball Logo
-                    Center(
-                      child: Image.asset(
-                        'assets/images/soccer_ball.png',
-                        height: 120,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
+      create: (context) => LoginViewModel(context.read<AuthRepository>()),
+      child: const _LoginView(),
+    );
+  }
+}
 
-                    // Welcome Back!
-                    Text(
-                      'دوباره خوش آمدید!',
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'برای ادامهٔ رزرو زمین فوتسال، وارد شوید',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 40),
+class _LoginView extends StatefulWidget {
+  const _LoginView();
 
-                    // Email Field
-                    TextField(
-                      textDirection: TextDirection.rtl,
-                      textAlign: TextAlign.right,
-                      onChanged: viewModel.setEmail,
-                      decoration: InputDecoration(
-                        labelText: 'ایمیل',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Theme.of(context).cardColor,
-                        labelStyle: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.primary,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+  @override
+  State<_LoginView> createState() => _LoginViewState();
+}
 
-                    // Password Field
-                    TextField(
-                      textDirection: TextDirection.rtl,
-                      textAlign: TextAlign.right,
-                      onChanged: viewModel.setPassword,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        labelText: 'رمز عبور',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Theme.of(context).cardColor,
-                        labelStyle: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.primary,
-                            width: 2,
-                          ),
-                        ),
-                        suffixIcon: IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Icons.visibility_off),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
+class _LoginViewState extends State<_LoginView> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
 
-                    // Forgot Password? (aligned to LEFT in RTL)
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {},
-                        child: Text(
-                          'رمز عبور را فراموش کرده‌ام؟',
-                          style: TextStyle(color: Theme.of(context).colorScheme.primary),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 40),
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
-                    // Log In Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: viewModel.isValid
-                            ? ()=> viewModel.login(context)
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          foregroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: const Text('ورود'),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
+  Future<void> _onLoginPressed() async {
+    if (!_formKey.currentState!.validate() || _isLoading) {
+      return;
+    }
 
-                    // OR Divider
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Divider(
-                            color: Theme.of(context).dividerColor,
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Text(
-                            'یا',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ),
-                        Expanded(
-                          child: Divider(
-                            color: Theme.of(context).dividerColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
+    setState(() {
+      _isLoading = true;
+    });
 
-                    // Google Sign In Button
-                    OutlinedButton.icon(
-                      onPressed: () {},
-                      icon: Image.asset(
-                        'assets/images/google_logo.png',
-                        height: 20,
-                      ),
-                      label: const Text('گوگل'),
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                    ),
-                    const SizedBox(height: 40),
+    try {
+      final viewModel = context.read<LoginViewModel>();
+      await viewModel.login(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+      // Auth state listener will handle navigation
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        String errorMessage;
+        switch (e.code) {
+          case 'user-not-found':
+            errorMessage = 'کاربری با این ایمیل یافت نشد.';
+            break;
+          case 'wrong-password':
+            errorMessage = 'رمز عبور اشتباه است.';
+            break;
+          case 'invalid-email':
+            errorMessage = 'ایمیل نامعتبر است.';
+            break;
+          case 'invalid-credential':
+            errorMessage = 'ایمیل یا رمز عبور اشتباه است.';
+            break;
+          default:
+            errorMessage = 'خطایی رخ داد: ${e.message}';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('An unexpected error occurred: $e');
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('خطایی رخ داد. لطفاً دوباره تلاش کنید.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
-                    // Sign Up Link (RTL order: "Sign Up" comes BEFORE text)
-                    Center(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/signup');
-                            },
-                            child: Text(
-                              'حساب کاربری ندارید؟',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ),
-                          Text(
-                            'ثبت‌نام',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 48),
+                  Center(
+                    child: Image.asset('assets/images/soccer_ball.png', height: 100),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'خوش آمدید!',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(labelText: 'ایمیل'),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) => value!.isEmpty ? 'لطفاً ایمیل خود را وارد کنید' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: const InputDecoration(labelText: 'رمز عبور'),
+                    obscureText: true,
+                    validator: (value) => value!.isEmpty ? 'لطفاً رمز عبور خود را وارد کنید' : null,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _onLoginPressed,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                  ],
-                );
-              },
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 24, width: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text('ورود'),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text('یا', style: Theme.of(context).textTheme.bodyMedium),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      // TODO: Implement Google Sign-In
+                    },
+                    icon: Image.asset('assets/images/google_logo.png', height: 20),
+                    label: const Text('ورود با گوگل'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('حساب کاربری ندارید؟'),
+                      TextButton(
+                        onPressed: () => Navigator.pushNamed(context, '/signup'),
+                        child: const Text('ثبت نام'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

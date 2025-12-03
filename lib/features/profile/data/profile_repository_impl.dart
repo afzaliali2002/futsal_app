@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
 import '../domain/repositories/profile_repository.dart';
 import 'models/user_model.dart';
 
@@ -24,6 +23,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
     }
 
     final data = doc.data()!;
-    return UserModel.fromMap(data);
+    return UserModel.fromMap(data, firebaseUser.uid); // ✅ FIXED
   }
 }

@@ -6,67 +6,15 @@ class LoginViewModel extends ChangeNotifier {
 
   LoginViewModel(this._authRepository);
 
-  String _email = '';
-  String _password = '';
-  bool _isLoading = false;
-  String? _errorMessage;
-
-  // GETTERS
-  String get email => _email;
-  String get password => _password;
-  bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
-
-  // SET EMAIL
-  void setEmail(String value) {
-    _email = value.trim();
-    _errorMessage = null; // clear previous error
-    notifyListeners();
-  }
-
-  // SET PASSWORD
-  void setPassword(String value) {
-    _password = value.trim();
-    _errorMessage = null; // clear previous error
-    notifyListeners();
-  }
-
-  // VALIDATION
-  bool get isValid {
-    return _email.isNotEmpty &&
-        _email.contains('@') &&
-        _password.length >= 6;
-  }
-
-  // LOGIN METHOD WITH NAVIGATION
-  Future<void> login(BuildContext context) async {
-    if (!isValid) {
-      _errorMessage = "ایمیل یا رمز عبور معتبر نیست.";
-      notifyListeners();
-      return;
-    }
-
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
+  Future<void> login({
+    required String email,
+    required String password,
+  }) async {
     try {
-      final user = await _authRepository.login(_email, _password);
-
-      _isLoading = false;
-      notifyListeners();
-
-      if (user != null) {
-        // SUCCESS → GO TO HOME
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        _errorMessage = "ورود ناموفق بود. لطفاً دوباره امتحان کنید.";
-        notifyListeners();
-      }
+      await _authRepository.login(email, password);
     } catch (e) {
-      _isLoading = false;
-      _errorMessage = e.toString(); // FirebaseAuthException message
-      notifyListeners();
+      // Re-throw the original Firebase exception to be handled by the UI
+      rethrow;
     }
   }
 }
