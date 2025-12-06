@@ -6,7 +6,7 @@ class AddFutsalFieldUseCase {
 
   AddFutsalFieldUseCase(this.repository);
 
-  Future<void> call(FutsalField field) async {
-    return await repository.addFutsalField(field);
+  Future<void> call(FutsalField futsal) {
+    return repository.addFutsalField(futsal);
   }
 }

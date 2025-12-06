@@ -20,7 +20,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
-    const FutsalListScreen(), // Corrected: This screen loads data from Firebase
+    const FutsalListScreen(),
     const SearchScreen(),
     const FavoritesScreen(),
     const NotificationsScreen(),

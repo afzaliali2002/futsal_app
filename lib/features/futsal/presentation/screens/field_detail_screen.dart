@@ -1,216 +1,213 @@
-// lib/features/futsal/presentation/screens/field_detail_screen.dart
-
 import 'package:flutter/material.dart';
+import '../../domain/entities/futsal_field.dart';
 
 class FieldDetailScreen extends StatelessWidget {
-  FieldDetailScreen({super.key});
+  const FieldDetailScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final field = _mockFieldData;
+    final field = ModalRoute.of(context)!.settings.arguments as FutsalField?;
+    final theme = Theme.of(context);
+
+    if (field == null) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(
+          child: Text('خطا: اطلاعات زمین یافت نشد.'),
+        ),
+      );
+    }
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back),
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: [
-          // Hero Image (16:9)
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: Theme.of(context).dividerColor.withOpacity(0.2),
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.sports_soccer,
-                  size: 64,
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                ),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: CustomScrollView(
+        slivers: [
+          _buildSliverAppBar(context, field),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 120), // More padding at bottom
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildLocationAndRating(context, field),
+                  const SizedBox(height: 24),
+                  if (field.features.isNotEmpty) ...[
+                    _buildSectionTitle(context, 'امکانات', Icons.widgets_outlined),
+                    const SizedBox(height: 16),
+                    _buildFeaturesGrid(context, field.features),
+                    const SizedBox(height: 24),
+                  ],
+                  _buildSectionTitle(context, 'توضیحات', Icons.info_outline),
+                  const SizedBox(height: 16),
+                  Text(
+                    'این یک توضیح نمونه برای زمین فوتسال است که جزئیات بیشتری در مورد امکانات و شرایط آن ارائه می‌دهد. این زمین دارای بهترین کیفیت چمن مصنوعی و نورپردازی حرفه‌ای است.',
+                    style: theme.textTheme.bodyLarge?.copyWith(height: 1.7, color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                    textAlign: TextAlign.justify,
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSectionTitle(context, 'زمان‌های آزاد', Icons.access_time_rounded),
+                  const SizedBox(height: 16),
+                  _buildTimeSlots(context),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 24),
-
-          // Title
-          Text(
-            field['name']!,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Location
-          Row(
-            children: [
-              const Icon(Icons.location_on, size: 18),
-              const SizedBox(width: 6),
-              Text(
-                field['location']!,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Rating
-          Row(
-            children: [
-              const Icon(Icons.star, color: Colors.orange, size: 18),
-              const SizedBox(width: 4),
-              Text(
-                '${field['rating']} (${field['reviews']} نظر)',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Price
-          Text(
-            '${field['price']} / ساعت',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Amenities
-          Wrap(
-            spacing: 16,
-            runSpacing: 12,
-            children: [
-              _buildAmenity(context, Icons.wc, 'سرویس بهداشتی'),
-              _buildAmenity(context, Icons.wb_sunny, 'نور کافی'),
-              _buildAmenity(context, Icons.local_parking, 'پارکینگ'),
-              _buildAmenity(context, Icons.bathtub, 'душ'),
-              _buildAmenity(context, Icons.coffee, 'کافی‌شاپ'),
-              _buildAmenity(context, Icons.ac_unit, 'سراسیم'),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Description
-          Text(
-            field['description']!,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              height: 1.5,
-            ),
-            textAlign: TextAlign.justify,
-          ),
-          const SizedBox(height: 24),
-
-          // Time Slots
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'زمان‌های آزاد',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 50,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: 8,
-                  itemBuilder: (context, index) {
-                    final time = '1${8 + index}:00';
-                    return Container(
-                      margin: EdgeInsets.only(right: index == 7 ? 0 : 12),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.primary,
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '$time',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 100), // Padding for sticky button
         ],
       ),
+      bottomNavigationBar: _buildBookingBottomBar(context, field),
+    );
+  }
 
-      // Sticky Book Now Button
-      bottomSheet: Container(
-        padding: const EdgeInsets.all(16),
-        color: Theme.of(context).scaffoldBackgroundColor,
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/booking');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+  SliverAppBar _buildSliverAppBar(BuildContext context, FutsalField field) {
+    return SliverAppBar(
+      expandedHeight: 250.0,
+      pinned: true,
+      stretch: true,
+      backgroundColor: Theme.of(context).primaryColor,
+      foregroundColor: Colors.white,
+      flexibleSpace: FlexibleSpaceBar(
+        centerTitle: true,
+        titlePadding: const EdgeInsets.only(bottom: 16),
+        title: Text(field.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white)),
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            field.imageUrl.isNotEmpty
+                ? Image.network(
+                    field.imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stack) => const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.white54)),
+                  )
+                : Container(color: Theme.of(context).primaryColor.withOpacity(0.5)),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.6)],
+                ),
               ),
-              padding: const EdgeInsets.symmetric(vertical: 16),
             ),
-            child: Text(
-              'رزرو الآن – ${field['price']}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildAmenity(BuildContext context, IconData icon, String label) {
+  Widget _buildLocationAndRating(BuildContext context, FutsalField field) {
+    final theme = Theme.of(context);
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall,
+        Icon(Icons.location_on_outlined, size: 20, color: theme.colorScheme.primary),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(field.address, style: theme.textTheme.titleMedium, overflow: TextOverflow.ellipsis),
+        ),
+        const SizedBox(width: 16),
+        Row(
+          children: [
+            const Icon(Icons.star, color: Colors.amber, size: 20),
+            const SizedBox(width: 5),
+            Text(field.rating.toStringAsFixed(1), style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          ],
         ),
       ],
     );
   }
 
-  final Map<String, String> _mockFieldData = {
-    'name': 'فوتسال المپیک',
-    'location': 'تهران، خیابان ولیعصر، نرسیده به میرداماد',
-    'rating': '4.8',
-    'reviews': '124',
-    'price': '۲۵۰,۰۰۰ تومان',
-    'description':
-    'زمین فوتسال المپیک با چمن مصنوعی باکیفیت، نورپردازی حرفه‌ای، سالن مجزا، رختکن و دوش گرم. مناسب برای مسابقات رسمی و تمرین تیم‌های حرفه‌ای.',
-  };
+  Widget _buildSectionTitle(BuildContext context, String title, IconData icon) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Icon(icon, color: theme.colorScheme.primary, size: 22),
+        const SizedBox(width: 8),
+        Text(title, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildFeaturesGrid(BuildContext context, List<String> features) {
+    final theme = Theme.of(context);
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: features.map((feature) {
+        return Chip(
+          label: Text(feature, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSecondaryContainer)),
+          backgroundColor: theme.colorScheme.secondaryContainer.withOpacity(0.5),
+          side: BorderSide.none,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildTimeSlots(BuildContext context) {
+    final theme = Theme.of(context);
+    final List<String> times = ['09:00', '11:00', '14:00', '16:00', '18:00', '20:00'];
+    return SizedBox(
+      height: 45,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: times.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 10),
+        itemBuilder: (context, index) {
+          bool isSelected = index == 1;
+          return ActionChip(
+            label: Text(times[index]),
+            onPressed: () {},
+            labelStyle: theme.textTheme.titleMedium?.copyWith(
+              color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
+            backgroundColor: isSelected ? theme.colorScheme.primary : theme.colorScheme.primaryContainer.withOpacity(0.3),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            side: BorderSide.none,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBookingBottomBar(BuildContext context, FutsalField field) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15).copyWith(bottom: MediaQuery.of(context).padding.bottom + 15),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, -5)),
+        ],
+        border: Border(top: BorderSide(color: theme.dividerColor, width: 1.5)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('قیمت برای ۱.۵ ساعت', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6))),
+              const SizedBox(height: 2),
+              Text('${field.pricePerHour.toStringAsFixed(0)} افغانی', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+            ],
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/booking', arguments: field);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.primaryColor,
+              foregroundColor: theme.colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('رزرو الان', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
 }

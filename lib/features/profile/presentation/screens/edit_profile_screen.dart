@@ -86,7 +86,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> with WidgetsBindi
       final newStatus = await Permission.photos.request();
       if (!mounted) return;
       if (newStatus.isGranted || newStatus.isLimited) {
-        await _pickImage(); // Retry picking the image
+        await _pickImage();
       } else {
         _showPermissionDeniedDialog();
       }
@@ -138,11 +138,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> with WidgetsBindi
         await firebaseUser.verifyBeforeUpdateEmail(_emailController.text.trim());
       }
 
-      final updatedData = {
+      final updatedData = <String, dynamic>{
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
         if (newAvatarUrl != null) 'avatarUrl': newAvatarUrl,
+        'modifiedAt': FieldValue.serverTimestamp(),
+        'modifiedBy': firebaseUser.uid,
       };
+
+      if (localUser.createdAt == null) {
+        updatedData['createdAt'] = FieldValue.serverTimestamp();
+        updatedData['createdBy'] = firebaseUser.uid;
+      }
+
       await FirebaseFirestore.instance.collection('users').doc(firebaseUser.uid).update(updatedData);
       await profileProvider.loadUser();
 

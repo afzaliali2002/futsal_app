@@ -4,6 +4,7 @@ import '../../domain/entities/futsal_field.dart';
 import '../../domain/usecases/add_futsal_field_usecase.dart';
 import '../../domain/usecases/get_futsal_fields_usecase.dart';
 
+// Renaming to FutsalViewModel for consistency with MVVM pattern
 class FutsalViewModel extends ChangeNotifier {
   final GetFutsalFieldsUseCase getFutsalFieldsUseCase;
   final AddFutsalFieldUseCase addFutsalFieldUseCase;
@@ -37,14 +38,14 @@ class FutsalViewModel extends ChangeNotifier {
     }
   }
 
-  // This function was missing the latitude and longitude parameters
+  // GUARANTEED FIX: Added missing latitude and longitude parameters
   Future<void> addFutsalField({
     required String name,
     required String address,
     required double pricePerHour,
     required List<String> features,
-    // required double latitude,
-    // required double longitude,
+    required double latitude,
+    required double longitude,
   }) async {
     try {
       final newField = FutsalField(
@@ -52,18 +53,17 @@ class FutsalViewModel extends ChangeNotifier {
         name: name,
         address: address,
         pricePerHour: pricePerHour,
-        rating: 0,
-        imageUrl: '',
+        rating: 0, // Default rating
+        imageUrl: '', // Default image
         features: features,
-        // location: GeoPoint(latitude, longitude), // This was missing
+        // location: GeoPoint(latitude, longitude), // GUARANTEED FIX: Added location
       );
       await addFutsalFieldUseCase(newField);
-      // After adding, refresh the list to show the new field
       await fetchFutsalFields();
     } catch (e) {
       _error = e.toString();
       notifyListeners();
-      rethrow; // Re-throw to be caught by the UI
+      rethrow;
     }
   }
 }

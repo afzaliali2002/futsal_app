@@ -25,4 +25,9 @@ class ProfileProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void clearUser() {
+    user = null;
+    notifyListeners();
+  }
 }

@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class FutsalField {
   final String id;
   final String name;
@@ -6,6 +8,7 @@ class FutsalField {
   final double pricePerHour;
   final double rating;
   final List<String> features;
+  // final GeoPoint location;
 
   FutsalField({
     required this.id,
@@ -15,5 +18,6 @@ class FutsalField {
     required this.pricePerHour,
     required this.rating,
     this.features = const [],
+    // required this.location,
   });
 }

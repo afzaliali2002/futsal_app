@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:futsal_app/features/futsal/presentation/providers/futsal_view_model.dart';
 import 'package:provider/provider.dart';
 import '../widgets/futsal_field_card.dart';
-import 'add_futsal_ground_screen.dart';
-
 class FutsalListScreen extends StatefulWidget {
   const FutsalListScreen({super.key});
 

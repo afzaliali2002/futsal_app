@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:futsal_app/features/futsal/data/models/futsal_model.dart';
 import '../../domain/entities/futsal_field.dart';
 import '../../domain/repositories/futsal_repository.dart';
-import '../models/futsal_field_model.dart';
 
 class FutsalRepositoryImpl implements FutsalRepository {
   final FirebaseFirestore firestore;
@@ -11,12 +11,11 @@ class FutsalRepositoryImpl implements FutsalRepository {
   @override
   Future<List<FutsalField>> getFutsalFields() async {
     try {
-      final snapshot = await firestore.collection('fields').get();
+      final snapshot = await firestore.collection('futsals').get();
       return snapshot.docs
-          .map((doc) => FutsalFieldModel.fromSnapshot(doc))
+          .map((doc) => FutsalModel.fromMap(doc.data(), doc.id))
           .toList();
     } catch (e) {
-      // In a real app, you would handle this error more gracefully
       print("Error fetching futsal fields: $e");
       rethrow;
     }
@@ -25,14 +24,8 @@ class FutsalRepositoryImpl implements FutsalRepository {
   @override
   Future<void> addFutsalField(FutsalField field) async {
     try {
-      await firestore.collection('fields').add({
-        'name': field.name,
-        'address': field.address,
-        'pricePerHour': field.pricePerHour,
-        'rating': field.rating,
-        'imageUrl': field.imageUrl,
-        'features': field.features,
-      });
+      final model = FutsalModel.fromEntity(field);
+      await firestore.collection('futsals').add(model.toMap());
     } catch (e) {
       print("Error adding futsal field: $e");
       rethrow;

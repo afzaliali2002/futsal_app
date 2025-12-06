@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../data/models/user_model.dart';
 
 class ProfileHeader extends StatelessWidget {
@@ -9,59 +10,58 @@ class ProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String avatar = user.avatarUrl.trim();
+    final String joinDate = user.createdAt != null
+        ? DateFormat.yMMMMd('fa_IR').format(user.createdAt!)
+        : 'تاریخ عضویت نامشخص';
 
     return Padding(
-      padding: const EdgeInsets.only(top: 40),
+      padding: const EdgeInsets.only(top: 20, bottom: 20),
       child: Column(
         children: [
           CircleAvatar(
-            radius: 50,
+            radius: 55,
             backgroundImage: avatar.isNotEmpty
                 ? NetworkImage(avatar)
-                : const AssetImage("assets/images/default_avatar.png")
-            as ImageProvider,
+                : const AssetImage("assets/images/default_avatar.png") as ImageProvider,
             onBackgroundImageError: (_, __) {},
           ),
           const SizedBox(height: 15),
 
-          /// Name
+          //Name
           Text(
             user.name.isNotEmpty ? user.name : "نام ثبت نشده",
             style: const TextStyle(
-              fontSize: 22,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
+          const SizedBox(height: 5),
 
           /// Email
           Text(
             user.email.isNotEmpty ? user.email : "ایمیل ثبت نشده",
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 14,
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 16,
             ),
           ),
+          const SizedBox(height: 15),
 
-          const SizedBox(height: 10),
-
-          /// Online Status
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.circle,
-                size: 14,
-                color: user.isOnline ? Colors.green : Colors.red,
+          /// Join Date
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              "عضو از $joinDate",
+              style: TextStyle(
+                color: Colors.grey.shade800,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
               ),
-              const SizedBox(width: 6),
-              Text(
-                user.isOnline ? "آنلاین" : "آفلاین",
-                style: TextStyle(
-                  color: user.isOnline ? Colors.green : Colors.red,
-                  fontSize: 14,
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),

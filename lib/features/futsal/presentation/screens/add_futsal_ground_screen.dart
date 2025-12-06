@@ -18,11 +18,11 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
   bool _isLoading = false;
 
   final List<String> _availableFeatures = [
-    'Shower',
-    'Parking',
-    'Cafe',
-    'Wi-Fi',
-    'Locker Room',
+    'دوش', // Shower
+    'پارکینگ', // Parking
+    'کافه', // Cafe
+    'وای فای', // Wi-Fi
+    'رختکن', // Locker Room
   ];
 
   @override
@@ -53,14 +53,14 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Futsal ground added successfully!')),
+          const SnackBar(content: Text('زمین با موفقیت اضافه شد!')),
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to add ground: $e')),
+          SnackBar(content: Text('خطا در افزودن زمین: $e')),
         );
       }
     } finally {
@@ -76,7 +76,7 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add New Futsal Ground'),
+        title: const Text('افزودن زمین جدید'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -86,42 +86,24 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Ground Name'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a name';
-                  }
-                  return null;
-                },
+                decoration: const InputDecoration(labelText: 'نام زمین'),
+                validator: (value) => value!.isEmpty ? 'لطفاً نام زمین را وارد کنید' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _addressController,
-                decoration: const InputDecoration(labelText: 'Address'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter an address';
-                  }
-                  return null;
-                },
+                decoration: const InputDecoration(labelText: 'آدرس'),
+                validator: (value) => value!.isEmpty ? 'لطفاً آدرس را وارد کنید' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _priceController,
-                decoration: const InputDecoration(labelText: 'Price per 1.5 Hours (AFN)'),
+                decoration: const InputDecoration(labelText: 'قیمت برای ۱.۵ ساعت (افغانی)'),
                 keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a price';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Please enter a valid number';
-                  }
-                  return null;
-                },
+                validator: (value) => value!.isEmpty || double.tryParse(value) == null ? 'لطفاً قیمت معتبری وارد کنید' : null,
               ),
               const SizedBox(height: 24),
-              const Text('Features', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('امکانات', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8.0,
@@ -142,25 +124,12 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 24),
-              const Text('Ground Image', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () {
-                  // We will implement image picking in a future step
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Image upload will be added soon!')),
-                  );
-                },
-                icon: const Icon(Icons.upload_file),
-                label: const Text('Upload Image'),
-              ),
               const SizedBox(height: 32),
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
                       onPressed: _saveGround,
-                      child: const Text('Save Ground'),
+                      child: const Text('ذخیره زمین'),
                     )
             ],
           ),

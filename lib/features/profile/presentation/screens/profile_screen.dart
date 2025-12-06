@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../auth/domain/repositories/auth_repository.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/profile_header.dart';
 import 'edit_profile_screen.dart';
-import 'change_password_screen.dart';
 import 'settings_screen.dart';
+import 'my_bookings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -46,67 +45,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ? Center(child: Text("An error occurred: ${vm.error}"))
               : vm.user == null
                   ? const Center(child: Text("User data could not be loaded."))
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Column(
-                        children: [
-                          ProfileHeader(user: vm.user!),
-                          const SizedBox(height: 30),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "حساب کاربری",
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
+                  : RefreshIndicator(
+                      onRefresh: () => context.read<ProfileProvider>().loadUser(),
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Column(
+                          children: [
+                            ProfileHeader(user: vm.user!),
+                            const SizedBox(height: 20),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "حساب کاربری",
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 15),
-                                _ProfileMenuCard(
-                                  items: [
-                                    _ProfileMenuItem(
-                                      title: 'ویرایش پروفایل',
-                                      icon: Icons.person_outline,
-                                      onTap: () => _navigateTo(const EditProfileScreen()),
-                                    ),
-                                    _ProfileMenuItem(
-                                      title: 'تغییر رمز عبور',
-                                      icon: Icons.lock_outline,
-                                      onTap: () => _navigateTo(const ChangePasswordScreen()),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 25),
-                                Text(
-                                  "عمومی",
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
+                                  const SizedBox(height: 15),
+                                  _ProfileMenuCard(
+                                    items: [
+                                      _ProfileMenuItem(
+                                        title: 'ویرایش پروفایل',
+                                        icon: Icons.person_outline,
+                                        onTap: () => _navigateTo(const EditProfileScreen()),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                const SizedBox(height: 15),
-                                _ProfileMenuCard(
-                                  items: [
-                                    _ProfileMenuItem(
-                                      title: 'تنظیمات',
-                                      icon: Icons.settings_outlined,
-                                      onTap: () => _navigateTo(const SettingsScreen()),
+                                  const SizedBox(height: 25),
+                                  Text(
+                                    "عمومی",
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    _ProfileMenuItem(
-                                      title: 'خروج',
-                                      icon: Icons.logout,
-                                      textColor: Colors.red,
-                                      onTap: () {
-                                        context.read<AuthRepository>().logout();
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                  ),
+                                  const SizedBox(height: 15),
+                                  _ProfileMenuCard(
+                                    items: [
+                                      _ProfileMenuItem(
+                                        title: 'رزرو های من',
+                                        icon: Icons.history_outlined,
+                                        onTap: () => _navigateTo(const MyBookingsScreen()),
+                                      ),
+                                      _ProfileMenuItem(
+                                        title: 'تنظیمات',
+                                        icon: Icons.settings_outlined,
+                                        onTap: () => _navigateTo(const SettingsScreen()),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
     );
@@ -121,10 +116,11 @@ class _ProfileMenuCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 3,
+      elevation: 2,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: Colors.grey.shade300, width: 0.5),
       ),
       child: Column(
         children: items,

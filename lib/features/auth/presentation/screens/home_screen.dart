@@ -1,206 +1,264 @@
 // lib/features/futsal/presentation/screens/home_screen.dart
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {
-   HomeScreen({super.key});
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    final scaffoldBackgroundColor = Theme.of(context).scaffoldBackgroundColor;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('زمین‌های فوتسال'),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        title: Text(
+          'زمین‌های فوتسال',
+          style: textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        backgroundColor: scaffoldBackgroundColor,
+        foregroundColor: colorScheme.onSurface,
         elevation: 0,
         actions: [
           IconButton(
             onPressed: () {},
             icon: const Icon(Icons.search),
+            tooltip: 'جستجو',
+            splashRadius: 24,
+            iconSize: 24,
           ),
         ],
       ),
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: 6,
-        itemBuilder: (context, index) => _buildFieldCard(context, index),
-      ),
-      // Optional: FAB for quick booking
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.black,
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
+      backgroundColor: scaffoldBackgroundColor,
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('fields').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator.adaptive());
+          }
 
-  Widget _buildFieldCard(BuildContext context, int index) {
-    final data = _fieldData[index];
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          onTap: () {
-            // Navigate to detail
-            Navigator.pushNamed(context, '/field-detail');
-          },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Image (16:9 ratio)
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Container(
-                  color: Theme.of(context).dividerColor.withOpacity(0.2),
-                  child: Center(
-                    child: Icon(
-                      Icons.sports_soccer,
-                      size: 48,
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                    ),
-                  ),
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Text(
+                  'خطا در بارگذاری داده‌ها.\nلطفاً دوباره تلاش کنید.',
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodyLarge?.copyWith(color: colorScheme.error),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(16),
+            );
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Title
+                    Icon(
+                      Icons.sports_soccer_outlined,
+                      size: 64,
+                      color: colorScheme.onSurface.withOpacity(0.4),
+                    ),
+                    const SizedBox(height: 16),
                     Text(
-                      data['name']!,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      'در حال حاضر زمین فوتسالی موجود نیست.',
+                      textAlign: TextAlign.center,
+                      style: textTheme.bodyLarge?.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.6),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    // Location
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on, size: 16),
-                        const SizedBox(width: 4),
-                        Text(
-                          data['location']!,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // Rating + Reviews
-                    Row(
-                      children: [
-                        const Icon(Icons.star, color: Colors.orange, size: 16),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${data['rating']} (${data['reviews']} نظر)',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    // Price + CTA
-                    Row(
-                      children: [
-                        Text(
-                          '${data['price']} / ساعت',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const Spacer(),
-                        OutlinedButton(
-                          onPressed: () {},
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(
-                              color: Theme.of(context).colorScheme.primary,
-                              width: 1.5,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          ),
-                          child: Text(
-                            'رزرو الآن',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
+            );
+          }
+
+          final fields = snapshot.data!.docs;
+
+          return ListView.builder(
+            padding: const EdgeInsets.only(top: 8, left: 16, right: 16, bottom: 24),
+            itemCount: fields.length,
+            itemBuilder: (context, index) {
+              final doc = fields[index];
+              final data = doc.data() as Map<String, dynamic>;
+
+              if (!data.containsKey('name')) return const SizedBox.shrink();
+
+              return _buildFieldCard(
+                context,
+                data['name'] as String,
+                data['location'] as String? ?? 'آدرس نامشخص',
+                data['rating'] as String? ?? '0.0',
+                data['reviews'] as String? ?? '0',
+                data['price'] as String? ?? 'نامشخص',
+              );
+            },
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        tooltip: 'افزودن رزرو جدید',
+        child: const Icon(Icons.add, size: 28),
       ),
     );
   }
 
-  final List<Map<String, String>> _fieldData = [
-    {
-      'name': 'فوتسال المپیک',
-      'location': 'تهران، خیابان ولیعصر',
-      'rating': '4.8',
-      'reviews': '124',
-      'price': '۲۵۰,۰۰۰ تومان'
-    },
-    {
-      'name': 'زمین فوتسال آریا',
-      'location': 'تهران، ستارخان',
-      'rating': '4.6',
-      'reviews': '98',
-      'price': '۲۳۰,۰۰۰ تومان'
-    },
-    {
-      'name': 'فوتسال شهرک غرب',
-      'location': 'تهران، شهرک غرب',
-      'rating': '4.9',
-      'reviews': '210',
-      'price': '۲۷۰,۰۰۰ تومان'
-    },
-    {
-      'name': 'زمین فوتسال پارس',
-      'location': 'تهران، شریعتی',
-      'rating': '4.5',
-      'reviews': '76',
-      'price': '۲۲۰,۰۰۰ تومان'
-    },
-    {
-      'name': 'فوتسال ولیعصر',
-      'location': 'تهران، میرداماد',
-      'rating': '4.7',
-      'reviews': '142',
-      'price': '۲۶۰,۰۰۰ تومان'
-    },
-    {
-      'name': 'زمین فوتسال نیلوفر',
-      'location': 'تهران، نیلوفر',
-      'rating': '4.4',
-      'reviews': '63',
-      'price': '۲۴۰,۰۰۰ تومان'
-    },
-  ];
+  Widget _buildFieldCard(
+      BuildContext context,
+      String name,
+      String location,
+      String rating,
+      String reviews,
+      String price,
+      ) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      clipBehavior: Clip.antiAlias,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: colorScheme.outline.withOpacity(0.15), width: 0.5),
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.pushNamed(context, '/field-detail');
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image area
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Container(
+                color: colorScheme.surfaceVariant,
+                alignment: Alignment.center,
+                child: Opacity(
+                  opacity: 0.6,
+                  child: Icon(
+                    Icons.sports_soccer,
+                    size: 52,
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
+            // Content padding
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Name
+                  Text(
+                    name,
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  // Location
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: colorScheme.primary.withOpacity(0.8),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          location,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Rating
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.star,
+                        size: 16,
+                        color: const Color(0xFFF5C518), // Consistent gold
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$rating',
+                        style: textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      Text(
+                        ' ($reviews نظر)',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Price + Button
+                  Row(
+                    children: [
+                      Text(
+                        '$price / ساعت',
+                        style: textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      const Spacer(),
+                      FilledButton.tonal(
+                        onPressed: () {},
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colorScheme.surface,
+                          foregroundColor: colorScheme.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          'رزرو الآن',
+                          style: textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
