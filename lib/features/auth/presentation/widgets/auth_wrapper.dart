@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:futsal_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:futsal_app/features/auth/presentation/screens/login-screen.dart';
-import 'package:futsal_app/features/core/presentation/screens/main_app_screen.dart';
+import 'package:futsal_app/features/futsal/presentation/screens/tabbed_home_screen.dart';
 import 'package:provider/provider.dart';
 
 class AuthWrapper extends StatelessWidget {
@@ -44,7 +44,7 @@ class AuthWrapper extends StatelessWidget {
           }
 
           // User is authenticated and their data exists in Firestore.
-          return const MainAppScreen();
+          return const TabbedHomeScreen();
         },
       );
     }

@@ -7,22 +7,22 @@ class BookingModel {
   final String userId;
   final String futsalId;
   final String futsalName;
-  final DateTime date;
+  final DateTime? date; // Made nullable
   final String timeSlot;
   final double price;
   final BookingStatus status;
-  final DateTime createdAt;
+  final DateTime? createdAt; // Made nullable
 
   BookingModel({
     required this.id,
     required this.userId,
     required this.futsalId,
     required this.futsalName,
-    required this.date,
+    this.date, // Made nullable
     required this.timeSlot,
     required this.price,
     this.status = BookingStatus.upcoming,
-    required this.createdAt,
+    this.createdAt, // Made nullable
   });
 
   factory BookingModel.fromMap(Map<String, dynamic> map, String id) {
@@ -31,14 +31,14 @@ class BookingModel {
       userId: map['userId'] ?? '',
       futsalId: map['futsalId'] ?? '',
       futsalName: map['futsalName'] ?? '',
-      date: (map['date'] as Timestamp).toDate(),
+      date: (map['date'] as Timestamp?)?.toDate(), // Safely parse nullable Timestamp
       timeSlot: map['timeSlot'] ?? '',
-      price: (map['price'] as num).toDouble(),
+      price: (map['price'] as num?)?.toDouble() ?? 0.0, // Made safer
       status: BookingStatus.values.firstWhere(
         (e) => e.toString() == 'BookingStatus.${map['status']}',
         orElse: () => BookingStatus.upcoming,
       ),
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
+      createdAt: (map['createdAt'] as Timestamp?)?.toDate(), // Safely parse nullable Timestamp
     );
   }
 
@@ -47,11 +47,11 @@ class BookingModel {
       'userId': userId,
       'futsalId': futsalId,
       'futsalName': futsalName,
-      'date': Timestamp.fromDate(date),
+      'date': date != null ? Timestamp.fromDate(date!) : null,
       'timeSlot': timeSlot,
       'price': price,
       'status': status.toString().split('.').last,
-      'createdAt': Timestamp.fromDate(createdAt),
+      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
     };
   }
 }

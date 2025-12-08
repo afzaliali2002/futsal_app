@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:futsal_app/features/futsal/presentation/providers/futsal_view_model.dart';
+import 'package:futsal_app/features/profile/presentation/view_models/user_view_model.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class AddFutsalGroundScreen extends StatefulWidget {
@@ -16,13 +19,14 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
   final _priceController = TextEditingController();
   final List<String> _selectedFeatures = [];
   bool _isLoading = false;
+  File? _image;
 
   final List<String> _availableFeatures = [
-    'دوش', // Shower
-    'پارکینگ', // Parking
-    'کافه', // Cafe
-    'وای فای', // Wi-Fi
-    'رختکن', // Locker Room
+    'دوش',
+    'پارکینگ',
+    'کافه',
+    'وای فای',
+    'رختکن',
   ];
 
   @override
@@ -31,6 +35,16 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
     _addressController.dispose();
     _priceController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _image = File(pickedFile.path);
+      });
+    }
   }
 
   Future<void> _saveGround() async {
@@ -42,6 +56,22 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
       _isLoading = true;
     });
 
+    final userViewModel = context.read<UserViewModel>();
+    final ownerId = userViewModel.user?.uid;
+
+    if (ownerId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('خطا: کاربر وارد نشده است. لطفا دوباره وارد شوید')),
+        );
+      }
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
     try {
       final viewModel = context.read<FutsalViewModel>();
       await viewModel.addFutsalField(
@@ -49,6 +79,8 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
         address: _addressController.text,
         pricePerHour: double.parse(_priceController.text),
         features: _selectedFeatures,
+        imageFile: _image,
+        ownerId: ownerId, // Pass the ownerId here
       );
 
       if (mounted) {
@@ -87,20 +119,24 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'نام زمین'),
-                validator: (value) => value!.isEmpty ? 'لطفاً نام زمین را وارد کنید' : null,
+                validator: (v) =>
+                    v!.isEmpty ? 'لطفاً نام زمین را وارد کنید' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _addressController,
                 decoration: const InputDecoration(labelText: 'آدرس'),
-                validator: (value) => value!.isEmpty ? 'لطفاً آدرس را وارد کنید' : null,
+                validator: (v) => v!.isEmpty ? 'لطفاً آدرس را وارد کنید' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _priceController,
-                decoration: const InputDecoration(labelText: 'قیمت برای ۱.۵ ساعت (افغانی)'),
+                decoration: const InputDecoration(
+                    labelText: 'قیمت برای ۱.۵ ساعت (افغانی)'),
                 keyboardType: TextInputType.number,
-                validator: (value) => value!.isEmpty || double.tryParse(value) == null ? 'لطفاً قیمت معتبری وارد کنید' : null,
+                validator: (v) => v!.isEmpty || double.tryParse(v) == null
+                    ? 'لطفاً قیمت معتبری وارد کنید'
+                    : null,
               ),
               const SizedBox(height: 24),
               const Text('امکانات', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -113,16 +149,30 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
                     label: Text(feature),
                     selected: isSelected,
                     onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          _selectedFeatures.add(feature);
-                        } else {
-                          _selectedFeatures.remove(feature);
-                        }
-                      });
+                      setState(() => isSelected
+                          ? _selectedFeatures.remove(feature)
+                          : _selectedFeatures.add(feature));
                     },
                   );
                 }).toList(),
+              ),
+              const SizedBox(height: 24),
+              const Text('تصویر زمین', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  height: 150,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: _image != null
+                      ? Image.file(_image!, fit: BoxFit.cover)
+                      : const Center(
+                          child: Icon(Icons.add_a_photo,
+                              size: 50, color: Colors.grey)),
+                ),
               ),
               const SizedBox(height: 32),
               _isLoading

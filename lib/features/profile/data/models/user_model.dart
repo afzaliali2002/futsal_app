@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:futsal_app/features/profile/data/models/user_role.dart';
 
 class UserModel {
   final String uid;
@@ -6,6 +7,9 @@ class UserModel {
   final String email;
   final String avatarUrl;
   final bool isOnline;
+  final UserRole role;
+  final bool isBlocked;
+  final DateTime? blockedUntil;
 
   // Audit fields
   final DateTime? createdAt;
@@ -24,6 +28,9 @@ class UserModel {
     required this.email,
     required this.avatarUrl,
     required this.isOnline,
+    this.role = UserRole.viewer,
+    this.isBlocked = false,
+    this.blockedUntil,
     this.createdAt,
     this.createdBy,
     this.modifiedAt,
@@ -43,6 +50,9 @@ class UserModel {
       email: map['email'] ?? '',
       avatarUrl: map['avatarUrl'] ?? '',
       isOnline: map['isOnline'] ?? false,
+      role: UserRole.values.firstWhere((e) => e.toString() == 'UserRole.${map['role']}', orElse: () => UserRole.viewer),
+      isBlocked: map['isBlocked'] ?? false,
+      blockedUntil: (map['blockedUntil'] as Timestamp?)?.toDate(),
       createdAt: (map['createdAt'] as Timestamp?)?.toDate(),
       createdBy: map['createdBy'] as String?,
       modifiedAt: (map['modifiedAt'] as Timestamp?)?.toDate(),
@@ -60,6 +70,9 @@ class UserModel {
       'email': email,
       'avatarUrl': avatarUrl,
       'isOnline': isOnline,
+      'role': role.toString().split('.').last,
+      'isBlocked': isBlocked,
+      'blockedUntil': blockedUntil != null ? Timestamp.fromDate(blockedUntil!) : null,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
       'createdBy': createdBy,
       'modifiedAt': modifiedAt != null ? Timestamp.fromDate(modifiedAt!) : null,
@@ -76,6 +89,9 @@ class UserModel {
     String? email,
     String? avatarUrl,
     bool? isOnline,
+    UserRole? role,
+    bool? isBlocked,
+    DateTime? blockedUntil,
     DateTime? createdAt,
     String? createdBy,
     DateTime? modifiedAt,
@@ -90,6 +106,9 @@ class UserModel {
       email: email ?? this.email,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       isOnline: isOnline ?? this.isOnline,
+      role: role ?? this.role,
+      isBlocked: isBlocked ?? this.isBlocked,
+      blockedUntil: blockedUntil ?? this.blockedUntil,
       createdAt: createdAt ?? this.createdAt,
       createdBy: createdBy ?? this.createdBy,
       modifiedAt: modifiedAt ?? this.modifiedAt,

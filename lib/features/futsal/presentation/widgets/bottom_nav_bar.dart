@@ -45,20 +45,12 @@ class BottomNavBar extends StatelessWidget {
             label: 'خانه',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'جستجو',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.favorite_border),
             label: 'علاقه‌مندی‌ها',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.notifications_outlined),
             label: 'اعلان‌ها',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'پروفایل',
           ),
         ],
       ),

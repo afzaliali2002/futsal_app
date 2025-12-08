@@ -10,7 +10,8 @@ class FutsalModel extends FutsalField {
     required double pricePerHour,
     required double rating,
     required List<String> features,
-    // required GeoPoint location,
+    required String ownerId,
+    GeoPoint? location,
   }) : super(
           id: id,
           name: name,
@@ -19,7 +20,8 @@ class FutsalModel extends FutsalField {
           pricePerHour: pricePerHour,
           rating: rating,
           features: features,
-          // location: location,
+          ownerId: ownerId,
+          location: location,
         );
 
   factory FutsalModel.fromMap(Map<String, dynamic> map, String id) {
@@ -39,9 +41,8 @@ class FutsalModel extends FutsalField {
       features: map['features'] is List
           ? List<String>.from(map['features'])
           : [],
-      // location: map['location'] is GeoPoint
-      //     ? map['location']
-      //     : const GeoPoint(0, 0),
+      ownerId: map['ownerId'] as String? ?? '',
+      location: map['location'] as GeoPoint?,
     );
   }
 
@@ -53,7 +54,8 @@ class FutsalModel extends FutsalField {
       'pricePerHour': pricePerHour,
       'rating': rating,
       'features': features,
-      // 'location': location,
+      'ownerId': ownerId,
+      'location': location,
     };
   }
 
@@ -66,7 +68,8 @@ class FutsalModel extends FutsalField {
       pricePerHour: entity.pricePerHour,
       rating: entity.rating,
       features: entity.features,
-      // location: entity.location,
+      ownerId: entity.ownerId,
+      location: entity.location,
     );
   }
 }

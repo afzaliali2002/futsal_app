@@ -10,7 +10,10 @@ class FutsalFieldModel extends FutsalField {
     required double pricePerHour,
     required double rating,
     required List<String> features,
-    // required GeoPoint location, // This was missing
+    required GeoPoint? location,
+    required String ownerId,
+    bool isFavorite = false,
+    List<String> searchKeywords = const [],
   }) : super(
           id: id,
           name: name,
@@ -19,10 +22,12 @@ class FutsalFieldModel extends FutsalField {
           pricePerHour: pricePerHour,
           rating: rating,
           features: features,
-          // location: location, // This was missing
+          location: location,
+          ownerId: ownerId,
+          isFavorite: isFavorite,
+          searchKeywords: searchKeywords,
         );
 
-  // This factory now correctly handles a missing or null location from Firestore.
   factory FutsalFieldModel.fromSnapshot(DocumentSnapshot snapshot) {
     final data = snapshot.data() as Map<String, dynamic>;
     return FutsalFieldModel(
@@ -33,7 +38,57 @@ class FutsalFieldModel extends FutsalField {
       pricePerHour: (data['pricePerHour'] ?? 0).toDouble(),
       rating: (data['rating'] ?? 0).toDouble(),
       features: List<String>.from(data['features'] ?? []),
-      // location: data['location'] as GeoPoint? ?? const GeoPoint(0, 0),
+      location: data['location'] as GeoPoint?,
+      ownerId: data['ownerId'] ?? '',
+      isFavorite: data['isFavorite'] ?? false,
+      searchKeywords: List<String>.from(data['searchKeywords'] ?? []),
+    );
+  }
+
+  factory FutsalFieldModel.fromEntity(FutsalField entity) {
+    return FutsalFieldModel(
+      id: entity.id,
+      name: entity.name,
+      address: entity.address,
+      imageUrl: entity.imageUrl,
+      pricePerHour: entity.pricePerHour,
+      rating: entity.rating,
+      features: entity.features,
+      location: entity.location,
+      ownerId: entity.ownerId,
+      isFavorite: entity.isFavorite,
+      searchKeywords: entity.searchKeywords,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'address': address,
+      'imageUrl': imageUrl,
+      'pricePerHour': pricePerHour,
+      'rating': rating,
+      'features': features,
+      'location': location,
+      'ownerId': ownerId,
+      'isFavorite': isFavorite,
+      'searchKeywords': searchKeywords,
+    };
+  }
+
+  FutsalField toEntity() {
+    return FutsalField(
+      id: id,
+      name: name,
+      address: address,
+      imageUrl: imageUrl,
+      pricePerHour: pricePerHour,
+      rating: rating,
+      features: features,
+      location: location,
+      ownerId: ownerId,
+      isFavorite: isFavorite,
+      searchKeywords: searchKeywords,
     );
   }
 }

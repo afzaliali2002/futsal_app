@@ -71,7 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       _ProfileMenuItem(
                                         title: 'ویرایش پروفایل',
                                         icon: Icons.person_outline,
-                                        onTap: () => _navigateTo(const EditProfileScreen()),
+                                        onTap: () => _navigateTo(EditProfileScreen(user: vm.user!)),
                                       ),
                                     ],
                                   ),

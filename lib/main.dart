@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:futsal_app/features/auth/presentation/screens/home_screen.dart';
 import 'package:futsal_app/features/auth/presentation/widgets/auth_wrapper.dart';
 import 'package:futsal_app/features/futsal/data/repositories/futsal_repository_impl.dart';
 import 'package:futsal_app/features/futsal/domain/repositories/futsal_repository.dart';
@@ -8,6 +10,8 @@ import 'package:futsal_app/features/futsal/domain/usecases/add_futsal_field_usec
 import 'package:futsal_app/features/futsal/domain/usecases/get_futsal_fields_usecase.dart';
 import 'package:futsal_app/features/futsal/presentation/providers/futsal_view_model.dart';
 import 'package:futsal_app/features/futsal/presentation/screens/add_futsal_ground_screen.dart';
+import 'package:futsal_app/features/notification/presentation/providers/notification_view_model.dart';
+import 'package:futsal_app/features/profile/presentation/view_models/user_view_model.dart';
 import 'package:provider/provider.dart';
 
 // Firebase
@@ -25,10 +29,6 @@ import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/presentation/screens/login-screen.dart';
 import 'features/auth/presentation/screens/signup_screen.dart';
-
-// Futsal
-import 'features/futsal/presentation/screens/tabbed_home_screen.dart';
-import 'features/futsal/presentation/screens/field_detail_screen.dart';
 
 // Booking
 import 'features/booking/presentation/screens/booking_from_screen.dart';
@@ -74,10 +74,16 @@ class MyApp extends StatelessWidget {
             GetCurrentUserUseCase(context.read<ProfileRepository>()),
           ),
         ),
+        ChangeNotifierProvider(
+            create: (context) =>
+                UserViewModel(authRepository: context.read<AuthRepository>())),
 
         // FUTSAL
         Provider<FutsalRepository>(
-          create: (_) => FutsalRepositoryImpl(firestore: FirebaseFirestore.instance),
+          create: (_) => FutsalRepositoryImpl(
+            firestore: FirebaseFirestore.instance,
+            storage: FirebaseStorage.instance,
+          ),
         ),
         Provider(
           create: (context) => GetFutsalFieldsUseCase(context.read<FutsalRepository>()),
@@ -89,7 +95,13 @@ class MyApp extends StatelessWidget {
           create: (context) => FutsalViewModel(
             getFutsalFieldsUseCase: context.read<GetFutsalFieldsUseCase>(),
             addFutsalFieldUseCase: context.read<AddFutsalFieldUseCase>(),
+            futsalRepository: context.read<FutsalRepository>(),
           ),
+        ),
+
+        // NOTIFICATION
+        ChangeNotifierProvider(
+          create: (context) => NotificationViewModel(),
         ),
       ],
       child: MaterialApp(
@@ -106,8 +118,7 @@ class MyApp extends StatelessWidget {
           '/auth-wrapper':(context) => const AuthWrapper(),
           '/login': (context) => const LoginScreen(),
           '/signup': (context) => const SignupScreen(),
-          '/home': (context) => const TabbedHomeScreen(),
-          '/field-detail': (context) => FieldDetailScreen(),
+          '/home': (context) => const HomeScreen(),
           '/booking': (context) => const BookingFormScreen(),
           '/add-ground': (context) => const AddFutsalGroundScreen(),
         },

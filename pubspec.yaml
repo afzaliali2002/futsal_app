@@ -1,6 +1,6 @@
 name: futsal_app
 description: "A new Flutter project."
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: 'none' 
 version: 1.0.0+1
 environment:
   sdk: ^3.10.1
@@ -11,11 +11,12 @@ dependencies:
   firebase_core: ^2.30.0
   firebase_auth: ^4.19.0
   cloud_firestore: ^4.17.0
+  firebase_storage: ^11.7.0
+  shared_preferences: ^2.5.3
   provider: ^6.1.2
   flutter_localizations:
     sdk: flutter
   image_picker: ^1.1.2
-  firebase_storage: ^11.7.0
   permission_handler: ^11.3.1
 
 dev_dependencies:
@@ -24,27 +25,10 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 flutter:
 
-  # The following line ensures that the Material Icons font is
-  # included with your  application, so that you can use the icons in
-  # the material Icons class.
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
-
-
-  # An image asset can refer to one or more resolution-specific "variants", see
-  # https://flutter.dev/to/resolution-aware-images
-
-  # For details regarding adding assets from package dependencies, see
-  # https://flutter.dev/to/asset-from-package
-
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
 
   fonts:
     - family: BYekan
@@ -54,5 +38,3 @@ flutter:
       fonts:
         - asset: assets/fonts/b-nazanin-outline.ttf
 
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/to/font-from-package

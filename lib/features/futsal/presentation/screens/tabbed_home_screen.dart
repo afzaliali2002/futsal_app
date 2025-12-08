@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../profile/presentation/screens/profile_screen.dart';
-import '../widgets/bottom_nav_bar.dart';
+import 'package:futsal_app/features/futsal/presentation/screens/favorite_futsal_screen.dart';
+import 'package:futsal_app/features/notification/presentation/screens/notification_screen.dart';
 import 'futsal_list_screen.dart';
-import 'search_screen.dart';
 
-// GUARANTEED-FIX: This file is now simplified to prevent UI conflicts.
 class TabbedHomeScreen extends StatefulWidget {
   const TabbedHomeScreen({super.key});
 
@@ -15,27 +13,41 @@ class TabbedHomeScreen extends StatefulWidget {
 class _TabbedHomeScreenState extends State<TabbedHomeScreen> {
   int _currentIndex = 0;
 
-  // The data fetching logic has been moved to FutsalListScreen as requested.
-
   final List<Widget> _screens = [
-    const FutsalListScreen(),      // Tab 1: Home
-    const SearchScreen(),         // Tab 2: Search
-    const Center(child: Text('علاقه‌مندی‌ها')),      // Tab 3: Favorites
-    const Center(child: Text('اعلان‌ها')),           // Tab 4: Notifications
-    const ProfileScreen(),            // Tab 5: Profile
+    const FutsalListScreen(),
+    const FavoriteFutsalScreen(),
+    const NotificationScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    // The Scaffold, AppBar, and FloatingActionButton have been removed to prevent
-    // conflicts with the new FutsalListScreen.
     return Scaffold(
-      body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavBar(
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
           setState(() => _currentIndex = index);
         },
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            label: 'خانه',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite_border),
+            label: 'علاقه‌مندی‌ها',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.notifications_outlined),
+            label: 'اعلان‌ها',
+          ),
+        ],
       ),
     );
   }

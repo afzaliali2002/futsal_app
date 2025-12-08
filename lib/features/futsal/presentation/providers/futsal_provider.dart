@@ -1,10 +1,10 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../domain/entities/futsal_field.dart';
 import '../../domain/usecases/add_futsal_field_usecase.dart';
 import '../../domain/usecases/get_futsal_fields_usecase.dart';
 
-// Renaming to FutsalViewModel for consistency with MVVM pattern
 class FutsalViewModel extends ChangeNotifier {
   final GetFutsalFieldsUseCase getFutsalFieldsUseCase;
   final AddFutsalFieldUseCase addFutsalFieldUseCase;
@@ -38,32 +38,35 @@ class FutsalViewModel extends ChangeNotifier {
     }
   }
 
-  // GUARANTEED FIX: Added missing latitude and longitude parameters
+  // GUARANTEED FIX: Made lat/long/image nullable to match your request
   Future<void> addFutsalField({
     required String name,
     required String address,
     required double pricePerHour,
     required List<String> features,
-    required double latitude,
-    required double longitude,
+    required String ownerId,
+    double? latitude,
+    double? longitude,
+    File? image,
   }) async {
-    try {
-      final newField = FutsalField(
-        id: '', // Firestore generates the ID
-        name: name,
-        address: address,
-        pricePerHour: pricePerHour,
-        rating: 0, // Default rating
-        imageUrl: '', // Default image
-        features: features,
-        // location: GeoPoint(latitude, longitude), // GUARANTEED FIX: Added location
-      );
-      await addFutsalFieldUseCase(newField);
-      await fetchFutsalFields();
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      rethrow;
+    GeoPoint? location;
+    if (latitude != null && longitude != null) {
+      location = GeoPoint(latitude, longitude);
     }
+
+    final newField = FutsalField(
+      id: '',
+      name: name,
+      address: address,
+      pricePerHour: pricePerHour,
+      rating: 0,
+      imageUrl: '',
+      features: features,
+      location: location,
+      ownerId: ownerId,
+    );
+
+    await addFutsalFieldUseCase(newField, image);
+    await fetchFutsalFields();
   }
 }

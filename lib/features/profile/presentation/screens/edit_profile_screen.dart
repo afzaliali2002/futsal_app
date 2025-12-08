@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -8,10 +7,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart';
 
-import '../providers/profile_provider.dart';
+import '../../data/models/user_model.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({super.key});
+  final UserModel user;
+  const EditProfileScreen({super.key, required this.user});
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -29,9 +29,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> with WidgetsBindi
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    final user = context.read<ProfileProvider>().user;
-    _nameController = TextEditingController(text: user?.name ?? '');
-    _emailController = TextEditingController(text: user?.email ?? '');
+    _nameController = TextEditingController(text: widget.user.name);
+    _emailController = TextEditingController(text: widget.user.email);
   }
 
   @override
@@ -114,14 +113,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> with WidgetsBindi
     bool emailChanged = false;
 
     try {
-      final profileProvider = context.read<ProfileProvider>();
-      final localUser = profileProvider.user;
+      final localUser = widget.user;
       final firebaseUser = FirebaseAuth.instance.currentUser;
 
       if (firebaseUser == null) {
         throw Exception('شما وارد حساب کاربری خود نشده‌اید. لطفاً دوباره وارد شوید.');
       }
-      if (localUser == null || localUser.uid != firebaseUser.uid) {
+      if (localUser.uid != firebaseUser.uid) {
         throw Exception('اطلاعات کاربری شما یافت نشد. لطفاً دوباره وارد شوید.');
       }
 
@@ -152,7 +150,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> with WidgetsBindi
       }
 
       await FirebaseFirestore.instance.collection('users').doc(firebaseUser.uid).update(updatedData);
-      await profileProvider.loadUser();
 
       if (!mounted) return;
 
@@ -290,15 +287,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> with WidgetsBindi
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final user = context.watch<ProfileProvider>().user;
 
     return Scaffold(
       appBar: AppBar(title: const Text('ویرایش پروفایل'), centerTitle: true),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : user == null
-              ? const Center(child: Text('کاربر یافت نشد'))
-              : SingleChildScrollView(
+          : SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
                   child: Form(
                     key: _formKey,
@@ -312,8 +306,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> with WidgetsBindi
                               CircleAvatar(
                                 backgroundImage: _avatarImage != null
                                     ? FileImage(_avatarImage!)
-                                    : (user.avatarUrl.isNotEmpty
-                                        ? NetworkImage(user.avatarUrl)
+                                    : (widget.user.avatarUrl.isNotEmpty
+                                        ? NetworkImage(widget.user.avatarUrl)
                                         : const AssetImage('assets/images/default_avatar.png')) as ImageProvider,
                               ),
                               Positioned(
@@ -322,7 +316,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> with WidgetsBindi
                                   color: theme.primaryColor, shape: const CircleBorder(), elevation: 2,
                                   child: InkWell(
                                     onTap: _pickImage, customBorder: const CircleBorder(),
-                                    child: const Padding(padding: EdgeInsets.all(8.0), child: Icon(Icons.camera_alt_outlined, color: Colors.white, size: 22)),
+                                    child: const Padding(padding: const EdgeInsets.all(8.0), child: Icon(Icons.camera_alt_outlined, color: Colors.white, size: 22)),
                                   ),
                                 ),
                               ),

@@ -1,3 +1,4 @@
+import 'dart:io';
 import '../entities/futsal_field.dart';
 import '../repositories/futsal_repository.dart';
 
@@ -6,7 +7,8 @@ class AddFutsalFieldUseCase {
 
   AddFutsalFieldUseCase(this.repository);
 
-  Future<void> call(FutsalField futsal) {
-    return repository.addFutsalField(futsal);
+  // GUARANTEED FIX: Added the image file as an optional parameter
+  Future<void> call(FutsalField field, [File? image]) async {
+    return await repository.addFutsalField(field, image);
   }
 }

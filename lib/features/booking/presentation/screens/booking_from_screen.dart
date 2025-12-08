@@ -86,7 +86,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
         'fieldName': field!.name,
         'fieldAddress': field!.address,
         'fieldImageUrl': field!.imageUrl,
-        'bookingTime': Timestamp.fromDate(bookingStartDateTime),
+        'date': Timestamp.fromDate(bookingStartDateTime), // Corrected key
         'durationHours': _selectedDuration,
         'totalPrice': finalPrice,
         'createdAt': Timestamp.now(), // Use local timestamp

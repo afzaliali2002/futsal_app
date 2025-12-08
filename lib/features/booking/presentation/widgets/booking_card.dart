@@ -22,6 +22,15 @@ class BookingCard extends StatelessWidget {
       BookingStatus.canceled: Colors.red,
     };
 
+    // Handle null date
+    final String formattedDate = booking.date != null 
+        ? dateFormat.format(booking.date!)
+        : 'تاریخ در دسترس نیست';
+
+    final String formattedPrice = booking.price > 0
+        ? '${NumberFormat.decimalPattern('fa_IR').format(booking.price)} تومان'
+        : 'رایگان';
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 2,
@@ -55,11 +64,11 @@ class BookingCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            _buildInfoRow(Icons.calendar_today_outlined, dateFormat.format(booking.date)),
+            _buildInfoRow(Icons.calendar_today_outlined, formattedDate),
             const SizedBox(height: 6),
             _buildInfoRow(Icons.access_time_outlined, booking.timeSlot),
             const SizedBox(height: 6),
-            _buildInfoRow(Icons.attach_money_outlined, '${NumberFormat.decimalPattern('fa_IR').format(booking.price)} تومان'),
+            _buildInfoRow(Icons.attach_money_outlined, formattedPrice),
           ],
         ),
       ),
@@ -76,3 +85,6 @@ class BookingCard extends StatelessWidget {
     );
   }
 }
+/*
+  i want that i have the search in the top like this and i should have like this user icon that user see depending info on that and in the nav only three important things should be fixed for me   and untill now i can not get anything or see blank space in the serach screen fixed that for both of that
+ */

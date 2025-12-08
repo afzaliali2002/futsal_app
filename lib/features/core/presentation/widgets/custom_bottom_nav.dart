@@ -52,11 +52,6 @@ class CustomBottomNav extends StatelessWidget {
             label: 'خانه',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.search_outlined, size: 22),
-            activeIcon: Icon(Icons.search, size: 22),
-            label: 'جستجو',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.favorite_border, size: 22),
             activeIcon: Icon(Icons.favorite, size: 22),
             label: 'علاقه‌مندی‌ها',
@@ -65,11 +60,6 @@ class CustomBottomNav extends StatelessWidget {
             icon: Icon(Icons.notifications_outlined, size: 22),
             activeIcon: Icon(Icons.notifications, size: 22),
             label: 'اعلان‌ها',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline, size: 22),
-            activeIcon: Icon(Icons.person, size: 22),
-            label: 'پروفایل',
           ),
         ],
       ),
