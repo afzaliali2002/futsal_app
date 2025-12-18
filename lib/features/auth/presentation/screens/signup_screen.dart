@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../domain/repositories/auth_repository.dart';
 
@@ -16,6 +18,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
 
   @override
   void dispose() {
@@ -43,19 +46,18 @@ class _SignupScreenState extends State<SignupScreen> {
         _nameController.text,
       );
       
-      // GUARANTEED FIX: Explicitly navigate after successful sign-up.
       if (mounted) {
         Navigator.of(context).pushNamedAndRemoveUntil('/home', (Route<dynamic> route) => false);
       }
 
-    } catch (e) {
+    } on FirebaseAuthException catch (e) {
       if (mounted) {
         String errorMessage = 'یک خطای ناشناخته رخ داد.';
-        if (e.toString().contains('email-already-in-use')) {
+        if (e.code == 'email-already-in-use') {
           errorMessage = 'این ایمیل قبلاً در سیستم ثبت شده است.';
-        } else if (e.toString().contains('network-request-failed')) {
+        } else if (e.code == 'network-request-failed') {
           errorMessage = 'خطا در اتصال به اینترنت. لطفاً اتصال خود را بررسی کنید.';
-        } else if (e.toString().contains('weak-password')) {
+        } else if (e.code == 'weak-password') {
           errorMessage = 'رمز عبور ضعیف است. لطفاً رمز قوی‌تری انتخاب کنید.';
         }
 
@@ -70,6 +72,66 @@ class _SignupScreenState extends State<SignupScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _onGoogleSignUpPressed() async {
+    if (_isGoogleLoading) {
+      return;
+    }
+
+    setState(() {
+      _isGoogleLoading = true;
+    });
+
+    try {
+      final authRepository = context.read<AuthRepository>();
+      await authRepository.signUpWithGoogle();
+
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (Route<dynamic> route) => false);
+      }
+
+    } catch (e, s) {
+      if (mounted) {
+        String errorMessage;
+
+        print('----------- GOOGLE SIGN-UP ERROR -----------');
+        print('Error Type: ${e.runtimeType}');
+        print('Error: $e');
+        print('Stack Trace: $s');
+        print('------------------------------------------');
+
+        if (e is FirebaseAuthException) {
+            switch (e.code) {
+              case 'account-exists-with-different-credential':
+                errorMessage = 'حسابی با این ایمیل قبلاً از طریق دیگری ثبت شده است.';
+                break;
+              case 'user-disabled':
+                errorMessage = 'این حساب کاربری غیرفعال شده است.';
+                break;
+              default:
+                errorMessage = 'خطایی در ثبت نام با گوگل رخ داد. کد خطا: ${e.code}';
+            }
+        } else if (e is PlatformException) {
+            errorMessage = 'خطای پلتفرم در ثبت نام با گوگل: ${e.message} (کد: ${e.code})';
+        } else {
+            errorMessage = 'یک خطای غیرمنتظره رخ داد: $e';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGoogleLoading = false;
         });
       }
     }
@@ -148,6 +210,32 @@ class _SignupScreenState extends State<SignupScreen> {
                                   strokeWidth: 2, color: Colors.white),
                             )
                           : const Text('ثبت نام'),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        const Expanded(child: Divider()),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Text('یا', style: Theme.of(context).textTheme.bodyMedium),
+                        ),
+                        const Expanded(child: Divider()),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    OutlinedButton.icon(
+                      onPressed: _onGoogleSignUpPressed,
+                      icon: _isGoogleLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Image.asset('assets/images/google_logo.png', height: 20),
+                      label: const Text('ثبت نام با گوگل'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Row(

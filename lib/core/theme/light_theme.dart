@@ -2,52 +2,53 @@
 
 import 'package:flutter/material.dart';
 import 'app_colors.dart' as colors;
+
 ThemeData lightTheme() {
   return ThemeData(
     brightness: Brightness.light,
-    scaffoldBackgroundColor: colors.AppColors.lightBackground,
-    cardColor: colors.AppColors.lightCard,
-    canvasColor: colors.AppColors.lightSurface,
+    scaffoldBackgroundColor: colors.AppColors.backgroundWhite, 
+    cardColor: colors.AppColors.backgroundWhite, 
+    canvasColor: colors.AppColors.backgroundWhite,
 
-    // ✅ Replace primaryColor & accentColor with colorScheme
-    colorScheme: ColorScheme.light(
-      primary: colors.AppColors.lightAccentOrange,
-      secondary: colors.AppColors.lightAccentOrange,
-      background: colors.AppColors.lightBackground,
-      surface: colors.AppColors.lightCard,
-      onPrimary: Colors.black,
-      onSurface: colors.AppColors.lightTextPrimary,
-      onBackground: colors.AppColors.lightTextPrimary,
-      outline: colors.AppColors.lightBorderGray, // for borders
+    colorScheme: const ColorScheme.light(
+      primary: colors.AppColors.primaryGreen,
+      secondary: colors.AppColors.secondaryBlue,
+      surface: colors.AppColors.backgroundWhite,
+      error: colors.AppColors.accentRed,
+      
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
+      onSurface: colors.AppColors.textIconsDark,
+      onError: Colors.white,
     ),
 
     fontFamily: 'BYekan',
 
-    textTheme: TextTheme(
+    textTheme: const TextTheme(
       headlineLarge: TextStyle(
         fontSize: 32,
         fontWeight: FontWeight.bold,
-        color: colors.AppColors.lightTextPrimary,
+        color: colors.AppColors.textIconsDark,
       ),
       headlineMedium: TextStyle(
         fontSize: 24,
         fontWeight: FontWeight.w600,
-        color: colors.AppColors.lightTextPrimary,
+        color: colors.AppColors.textIconsDark,
       ),
       bodyLarge: TextStyle(
         fontSize: 16,
-        color: colors.AppColors.lightTextSecondary,
+        color: colors.AppColors.textIconsDark,
       ),
       bodyMedium: TextStyle(
         fontSize: 14,
-        color: colors.AppColors.lightTextSecondary,
+        color: colors.AppColors.textIconsDark,
       ),
     ),
 
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: colors.AppColors.lightAccentOrange,
-        foregroundColor: Colors.black, // text/icon color on button
+        backgroundColor: colors.AppColors.primaryGreen, // Primary Green
+        foregroundColor: Colors.white, 
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -57,53 +58,46 @@ ThemeData lightTheme() {
 
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: colors.AppColors.lightCard,
+      fillColor: const Color(0xFFF5F5F5),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: colors.AppColors.lightBorderGray),
+        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: colors.AppColors.lightBorderGray),
+        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(
-          color: colors.AppColors.lightAccentOrange,
+        borderSide: const BorderSide(
+          color: colors.AppColors.primaryGreen,
           width: 2,
         ),
       ),
-      hintStyle: TextStyle(color: colors.AppColors.lightTextSecondary),
-      labelStyle: TextStyle(color: colors.AppColors.lightTextSecondary),
+      hintStyle: const TextStyle(color: Colors.grey),
+      labelStyle: const TextStyle(color: colors.AppColors.textIconsDark),
     ),
 
-    iconTheme: IconThemeData(
-      color: colors.AppColors.lightTextPrimary,
+    iconTheme: const IconThemeData(
+      color: colors.AppColors.secondaryBlue, 
     ),
 
-    appBarTheme: AppBarTheme(
-      backgroundColor: colors.AppColors.lightBackground,
-      titleTextStyle: TextStyle(
-        color: colors.AppColors.lightTextPrimary,
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-      ),
-      iconTheme: IconThemeData(
-        color: colors.AppColors.lightTextPrimary,
-      ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: colors.AppColors.backgroundWhite, 
+      foregroundColor: colors.AppColors.textIconsDark, 
+      elevation: 0,
     ),
 
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: colors.AppColors.lightAccentOrange,
+        foregroundColor: colors.AppColors.secondaryBlue, // Secondary Blue
       ),
     ),
+    
+    dividerColor: const Color(0xFFEEEEEE),
 
-    dividerColor: colors.AppColors.lightBorderGray,
-
-    // ✅ Fixed: CardTheme → CardThemeData
     cardTheme: CardThemeData(
-      color: colors.AppColors.lightCard,
+      color: colors.AppColors.backgroundWhite,
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),

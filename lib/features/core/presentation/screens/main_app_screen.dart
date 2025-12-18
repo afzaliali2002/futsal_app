@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import '../../../futsal/presentation/screens/futsal_list_screen.dart';
+import 'package:futsal_app/features/futsal/presentation/screens/futsal_list_screen.dart';
 import '../../../auth/presentation/screens/notifications_screen.dart';
 import '../../../booking/presentation/screens/favorites_screen.dart';
 import '../widgets/custom_bottom_nav.dart';

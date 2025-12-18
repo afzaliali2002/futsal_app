@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -15,115 +16,97 @@ class FutsalViewModel extends ChangeNotifier {
     required this.getFutsalFieldsUseCase,
     required this.addFutsalFieldUseCase,
     required this.futsalRepository,
-  });
+  }) {
+    listenToFutsalFields();
+  }
 
   List<FutsalField> _fields = [];
   List<FutsalField> get fields => _fields;
 
-  bool _isLoading = false;
+  bool _isLoading = true;
   bool get isLoading => _isLoading;
 
   String? _error;
   String? get error => _error;
 
-  Future<void> fetchFutsalFields() async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+  StreamSubscription? _subscription;
 
-    try {
-      _fields = await getFutsalFieldsUseCase();
+  void listenToFutsalFields() {
+    _subscription = getFutsalFieldsUseCase().listen((fields) async {
+      _fields = fields;
       await _loadFavoriteStatus();
-    } catch (e) {
-      _error = e.toString();
-    } finally {
       _isLoading = false;
       notifyListeners();
-    }
+    });
   }
 
   Future<void> addFutsalField({
-    required String name,
-    required String address,
-    required double pricePerHour,
-    required List<String> features,
-    required File? imageFile,
-    required String ownerId,
+    required FutsalField field,
+    File? coverImage,
+    List<File>? galleryImages,
   }) async {
-    try {
-      final newField = FutsalField(
-        id: '', 
-        name: name,
-        address: address,
-        pricePerHour: pricePerHour,
-        rating: 0,
-        imageUrl: '', 
-        features: features,
-        ownerId: ownerId,
-      );
-      await addFutsalFieldUseCase(newField, imageFile);
-      await fetchFutsalFields();
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      rethrow;
-    }
+    await addFutsalFieldUseCase(field, coverImage, galleryImages ?? []);
   }
 
   Future<void> toggleFavorite(FutsalField field) async {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId == null) return;
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
 
     field.isFavorite = !field.isFavorite;
-
-    try {
-      if (field.isFavorite) {
-        await futsalRepository.addToFavorites(field.id, userId);
-      } else {
-        await futsalRepository.removeFromFavorites(field.id, userId);
-      }
-    } catch (e) {
-      _error = e.toString();
-      field.isFavorite = !field.isFavorite; // Revert on error
-    }
     notifyListeners();
+
+    if (field.isFavorite) {
+      await futsalRepository.addToFavorites(field.id, uid);
+    } else {
+      await futsalRepository.removeFromFavorites(field.id, uid);
+    }
+  }
+
+  // ⭐ NEW
+  Future<void> rateGround(String groundId, double rating) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    await futsalRepository.rateGround(
+      groundId: groundId,
+      userId: uid,
+      rating: rating,
+    );
+  }
+
+  Future<double?> getUserRating(String groundId) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return null;
+
+    return await futsalRepository.getUserRating(groundId, uid);
   }
 
   Future<void> deleteGround(String groundId) async {
-    try {
-      await futsalRepository.deleteGround(groundId);
-      await fetchFutsalFields();
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      rethrow;
-    }
+    await futsalRepository.deleteGround(groundId);
   }
 
-  Future<void> updateGround(FutsalField ground) async {
-    try {
-      await futsalRepository.updateGround(ground);
-      await fetchFutsalFields();
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      rethrow;
-    }
+  Future<void> updateGround(FutsalField ground, {File? coverImage}) async {
+    await futsalRepository.updateGround(ground, coverImage: coverImage);
   }
 
   Future<void> _loadFavoriteStatus() async {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId == null) return;
-
-    try {
-      final favoriteIds = await futsalRepository.getFavoriteGrounds(userId);
-      for (var field in _fields) {
-        if (favoriteIds.contains(field.id)) {
-          field.isFavorite = true;
-        }
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      for (final f in _fields) {
+        f.isFavorite = false;
       }
-    } catch (e) {
-      _error = e.toString();
+      return;
     }
+
+    final favs = await futsalRepository.getFavoriteGrounds(uid);
+    for (final f in _fields) {
+      f.isFavorite = favs.contains(f.id);
+    }
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
   }
 }

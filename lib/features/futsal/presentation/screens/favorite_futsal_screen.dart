@@ -1,34 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:futsal_app/features/futsal/presentation/providers/futsal_view_model.dart';
-import 'package:futsal_app/features/futsal/presentation/widgets/futsal_field_card.dart';
 import 'package:provider/provider.dart';
+import '../providers/futsal_view_model.dart';
+import '../widgets/futsal_field_card.dart';
+import 'field_detail_screen.dart';
 
 class FavoriteFutsalScreen extends StatelessWidget {
   const FavoriteFutsalScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<FutsalViewModel>();
-    final favoriteFields = vm.fields.where((field) => field.isFavorite).toList();
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('علاقه‌مندی‌ها'),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        title: const Text('زمین‌های مورد علاقه'),
       ),
-      body: favoriteFields.isEmpty
-          ? const Center(
-              child: Text('هیچ زمین موردعلاقه‌ای یافت نشد.'),
-            )
-          : ListView.builder(
-              itemCount: favoriteFields.length,
-              itemBuilder: (context, index) {
-                final field = favoriteFields[index];
-                return FutsalFieldCard(field: field);
-              },
-            ),
+      body: Consumer<FutsalViewModel>(
+        builder: (context, vm, child) {
+          if (vm.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final favoriteFields = vm.fields.where((field) => field.isFavorite).toList();
+
+          if (favoriteFields.isEmpty) {
+            return const Center(
+              child: Text(
+                'شما هنوز هیچ زمینی را به لیست مورد علاقه خود اضافه نکرده‌اید.',
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+
+          return ListView.builder(
+            itemCount: favoriteFields.length,
+            itemBuilder: (context, index) {
+              final field = favoriteFields[index];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => FieldDetailScreen(field: field),
+                    ),
+                  );
+                },
+                child: FutsalFieldCard(field: field),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

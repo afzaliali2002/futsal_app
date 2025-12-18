@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:futsal_app/features/profile/data/models/user_role.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/profile_provider.dart';
@@ -42,7 +43,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: vm.loading
           ? const Center(child: CircularProgressIndicator())
           : vm.error != null
-              ? Center(child: Text("An error occurred: ${vm.error}"))
+              ? Center(child: Text("An error occurred: \${vm.error}"))
               : vm.user == null
                   ? const Center(child: Text("User data could not be loaded."))
                   : RefreshIndicator(
@@ -131,12 +132,14 @@ class _ProfileMenuCard extends StatelessWidget {
 
 class _ProfileMenuItem extends StatelessWidget {
   final String title;
+  final String? subtitle;
   final IconData icon;
   final VoidCallback onTap;
   final Color? textColor;
 
   const _ProfileMenuItem({
     required this.title,
+    this.subtitle,
     required this.icon,
     required this.onTap,
     this.textColor,
@@ -147,6 +150,7 @@ class _ProfileMenuItem extends StatelessWidget {
     return ListTile(
       leading: Icon(icon, color: textColor ?? Theme.of(context).colorScheme.onSurface),
       title: Text(title, style: TextStyle(color: textColor, fontWeight: FontWeight.w500)),
+      subtitle: subtitle != null ? Text(subtitle!) : null,
       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
       onTap: onTap,
     );

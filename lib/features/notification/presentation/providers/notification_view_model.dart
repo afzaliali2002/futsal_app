@@ -1,39 +1,28 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:futsal_app/features/notification/domain/entities/notification.dart' as app_notification;
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:futsal_app/features/notification/data/models/notification_model.dart';
+import 'package:futsal_app/features/notification/domain/repositories/notification_repository.dart';
+import 'package:futsal_app/features/notification/domain/usecases/get_notifications_use_case.dart';
 
 class NotificationViewModel extends ChangeNotifier {
-  List<app_notification.Notification> _notifications = [];
-  List<app_notification.Notification> get notifications => _notifications;
+  final GetNotificationsUseCase _getNotificationsUseCase;
+  final NotificationRepository _notificationRepository;
 
-  NotificationViewModel() {
-    _fetchNotifications();
+  NotificationViewModel(this._getNotificationsUseCase, this._notificationRepository);
+
+  Stream<List<NotificationModel>> getNotifications(String userId) {
+    return _getNotificationsUseCase(userId);
   }
 
-  void _fetchNotifications() {
-    FirebaseFirestore.instance
-        .collection('notifications')
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .listen((snapshot) {
-      _notifications = snapshot.docs.map((doc) {
-        final data = doc.data();
-        return app_notification.Notification(
-          id: doc.id,
-          title: data['title'] ?? '',
-          body: data['body'] ?? '',
-          timestamp: data['timestamp'] ?? Timestamp.now(),
-          isRead: data['isRead'] ?? false,
-        );
-      }).toList();
-      notifyListeners();
-    });
+  Stream<int> getUnreadNotificationsCount(String userId) {
+    return _notificationRepository.getUnreadNotificationsCount(userId);
   }
 
-  void markAsRead(app_notification.Notification notification) {
-    FirebaseFirestore.instance
-        .collection('notifications')
-        .doc(notification.id)
-        .update({'isRead': true});
+  Future<void> markAsRead(String userId, String notificationId) async {
+    await _notificationRepository.markAsRead(userId, notificationId);
+  }
+
+  Future<void> markAllAsRead(String userId) async {
+    await _notificationRepository.markAllAsRead(userId);
   }
 }

@@ -23,6 +23,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
     }
 
     final data = doc.data()!;
-    return UserModel.fromMap(data, firebaseUser.uid); // ✅ FIXED
+    return UserModel.fromMap(data, firebaseUser.uid);
   }
 }

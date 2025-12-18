@@ -7,8 +7,7 @@ class AddFutsalFieldUseCase {
 
   AddFutsalFieldUseCase(this.repository);
 
-  // GUARANTEED FIX: Added the image file as an optional parameter
-  Future<void> call(FutsalField field, [File? image]) async {
-    return await repository.addFutsalField(field, image);
+  Future<void> call(FutsalField field, File? coverImage, List<File> galleryImages) async {
+    return repository.addFutsalField(field, coverImage, galleryImages);
   }
 }

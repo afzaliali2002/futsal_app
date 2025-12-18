@@ -59,7 +59,5 @@ class AdminRepositoryImpl implements AdminRepository {
     final model = FutsalFieldModel.fromEntity(ground);
     await _firestore.collection('fields').doc(ground.id).update(model.toMap());
   }
-
-
-
 }
+

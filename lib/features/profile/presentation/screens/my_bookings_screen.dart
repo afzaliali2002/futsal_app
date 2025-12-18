@@ -32,7 +32,7 @@ class MyBookingsScreen extends StatelessWidget {
         GetMyBookingsUseCase(
           BookingRepositoryImpl(FirebaseFirestore.instance),
         ),
-      )..fetchBookings(user.uid),
+      )..listenToMyBookings(user.uid),
       child: Scaffold(
         appBar: AppBar(
           title: const Text('رزرو های من'),

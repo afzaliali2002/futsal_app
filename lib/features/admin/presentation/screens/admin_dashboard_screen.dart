@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:futsal_app/features/admin/data/repositories/admin_repository_impl.dart';
 import 'package:futsal_app/features/admin/presentation/screens/user_detail_screen.dart';
 import 'package:futsal_app/features/admin/presentation/view_models/admin_view_model.dart';
+import 'package:futsal_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:futsal_app/features/futsal/domain/entities/futsal_field.dart';
+import 'package:futsal_app/features/futsal/presentation/screens/field_detail_screen.dart';
 import 'package:futsal_app/features/profile/data/models/user_model.dart';
 import 'package:provider/provider.dart';
-import 'package:futsal_app/features/futsal/presentation/screens/field_detail_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -38,12 +39,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) =>
-          AdminViewModel(AdminRepositoryImpl(FirebaseFirestore.instance))
-            ..fetchData(),
+      create: (context) => AdminViewModel(
+        AdminRepositoryImpl(FirebaseFirestore.instance),
+        context.read<AuthRepository>(),
+      )..fetchData(),
       child: Scaffold(
         appBar: AppBar(
           title: const Text('داشبورد ادمین'),
+          actions: [
+            Consumer<AdminViewModel>(
+              builder: (context, adminViewModel, _) {
+                return IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: () {
+                    adminViewModel.logout();
+                  },
+                );
+              },
+            ),
+          ],
           bottom: TabBar(
             controller: _tabController,
             tabs: const [
@@ -156,7 +170,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     );
   }
 
-  Widget _buildUsersList(List<UserModel> users, BuildContext context, AdminViewModel adminViewModel) {
+  Widget _buildUsersList(
+      List<UserModel> users, BuildContext context, AdminViewModel adminViewModel) {
     if (users.isEmpty) {
       return const Center(child: Text('کاربری یافت نشد.'));
     }
@@ -172,15 +187,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             subtitle: Text(user.email),
             trailing: Text(user.role.toString().split('.').last),
             onTap: () {
-               Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChangeNotifierProvider.value(
-                        value: adminViewModel,
-                        child: UserDetailScreen(user: user),
-                      ),
-                    ),
-                  );
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChangeNotifierProvider.value(
+                    value: adminViewModel,
+                    child: UserDetailScreen(user: user),
+                  ),
+                ),
+              );
             },
           ),
         );
@@ -197,15 +212,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       itemCount: grounds.length,
       itemBuilder: (context, index) {
         final ground = grounds[index];
-        final location = ground.location;
-        final locationText = location != null
-            ? 'Lat: ${location.latitude}, Lng: ${location.longitude}'
-            : 'موقعیت مکانی ثبت نشده';
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: ListTile(
             title: Text(ground.name),
-            subtitle: Text(locationText),
+            subtitle: Text(ground.address),
             trailing: Text('قیمت: ${ground.pricePerHour}'),
             onTap: () {
               Navigator.of(context).push(MaterialPageRoute(

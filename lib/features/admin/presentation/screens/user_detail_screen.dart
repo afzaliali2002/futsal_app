@@ -4,65 +4,66 @@ import 'package:futsal_app/features/admin/presentation/widgets/confirmation_dial
 import 'package:futsal_app/features/profile/data/models/user_model.dart';
 import 'package:futsal_app/features/profile/data/models/user_role.dart';
 import 'package:futsal_app/features/admin/presentation/view_models/admin_view_model.dart';
+import 'package:futsal_app/features/profile/presentation/view_models/user_view_model.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:shamsi_date/shamsi_date.dart';
 
 class UserDetailScreen extends StatelessWidget {
   final UserModel user;
 
   const UserDetailScreen({super.key, required this.user});
 
+  String _formatDateTime(DateTime? dateTime) {
+    if (dateTime == null) return 'نامشخص';
+    final jalaliDate = Jalali.fromDateTime(dateTime.toLocal());
+    final timeFormat = DateFormat('h:mm a');
+    final formattedTime = timeFormat.format(dateTime.toLocal());
+    return '${jalaliDate.year}/${jalaliDate.month}/${jalaliDate.day} - $formattedTime';
+  }
+
   @override
   Widget build(BuildContext context) {
     final adminViewModel = Provider.of<AdminViewModel>(context, listen: false);
 
-    return Consumer<AdminViewModel>(
-      builder: (context, vm, child) {
-        if (vm.successMessage != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(vm.successMessage!)),
-            );
-            vm.clearSuccessMessage();
-          });
-        }
-
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(user.name),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChangeNotifierProvider.value(
-                        value: adminViewModel,
-                        child: EditUserScreen(user: user),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(user.name),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChangeNotifierProvider.value(
+                    value: adminViewModel,
+                    child: EditUserScreen(user: user),
+                  ),
+                ),
+              );
+            },
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildUserInfo(context),
-                const SizedBox(height: 24),
-                _buildAdminActions(context, adminViewModel),
-              ],
-            ),
-          ),
-        );
-      },
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildUserInfo(context, adminViewModel),
+            const SizedBox(height: 24),
+            _buildAdminActions(context, adminViewModel),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildUserInfo(BuildContext context) {
+  Widget _buildUserInfo(BuildContext context, AdminViewModel adminViewModel) {
+    final createdBy = adminViewModel.getUserById(user.createdBy ?? '')?.email ?? 'نامشخص';
+    final modifiedBy = adminViewModel.getUserById(user.modifiedBy ?? '')?.email ?? 'نامشخص';
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -74,12 +75,12 @@ class UserDetailScreen extends StatelessWidget {
             _buildDetailRow(context, 'ایمیل', user.email),
             _buildDetailRow(context, 'نقش', user.role.toString().split('.').last),
             _buildDetailRow(context, 'وضعیت', user.isOnline ? 'آنلاین' : 'آفلاین'),
-            _buildDetailRow(context, 'تاریخ ایجاد', user.createdAt?.toLocal().toString() ?? 'نامشخص'),
-            _buildDetailRow(context, 'ایجاد شده توسط', user.createdBy ?? 'نامشخص'),
-            _buildDetailRow(context, 'تاریخ ویرایش', user.modifiedAt?.toLocal().toString() ?? 'نامشخص'),
-            _buildDetailRow(context, 'ویرایش شده توسط', user.modifiedBy ?? 'نامشخص'),
+            _buildDetailRow(context, 'تاریخ ایجاد', _formatDateTime(user.createdAt)),
+            _buildDetailRow(context, 'ایجاد شده توسط', createdBy),
+            _buildDetailRow(context, 'تاریخ ویرایش', _formatDateTime(user.modifiedAt)),
+            _buildDetailRow(context, 'ویرایش شده توسط', modifiedBy),
             if (user.isBlocked)
-              _buildDetailRow(context, 'مسدود تا', user.blockedUntil?.toLocal().toString() ?? 'نامشخص'),
+              _buildDetailRow(context, 'مسدود تا', _formatDateTime(user.blockedUntil)),
           ],
         ),
       ),
@@ -99,8 +100,7 @@ class UserDetailScreen extends StatelessWidget {
               value,
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.end,
-              overflow: TextOverflow.fade,
-              softWrap: false,
+              softWrap: true,
             ),
           ),
         ],
@@ -113,21 +113,9 @@ class UserDetailScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ElevatedButton.icon(
-          onPressed: () async {
-            final confirm = await showConfirmationDialog(
-              context,
-              'تغییر نقش',
-              'آیا از تغییر نقش این کاربر اطمینان دارید؟',
-            );
-            if (confirm == true) {
-              adminViewModel.updateUserRole(
-                user.uid,
-                user.role == UserRole.admin ? UserRole.viewer : UserRole.admin,
-              );
-            }
-          },
+          onPressed: () => _showRoleManagementDialog(context, user, adminViewModel),
           icon: const Icon(Icons.sync_alt),
-          label: const Text('تغییر نقش به ادمین/کاربر'),
+          label: const Text('تغییر نقش'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.orange,
             foregroundColor: Colors.white,
@@ -164,6 +152,51 @@ class UserDetailScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  void _showRoleManagementDialog(
+      BuildContext context, UserModel user, AdminViewModel adminViewModel) {
+    UserRole? selectedRole = user.role;
+    final userViewModel = Provider.of<UserViewModel>(context, listen: false);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('تغییر نقش کاربر'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: UserRole.values.map((role) {
+                  return RadioListTile<UserRole>(
+                    title: Text(role.toString().split('.').last),
+                    value: role,
+                    groupValue: selectedRole,
+                    onChanged: (value) {
+                      setState(() {
+                        selectedRole = value;
+                      });
+                    },
+                  );
+                }).toList(),
+              );
+            },
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('لغو')),
+            ElevatedButton(
+              onPressed: () {
+                if (selectedRole != null) {
+                  adminViewModel.updateUserRole(user.uid, selectedRole!, userViewModel);
+                }
+                Navigator.pop(context);
+              },
+              child: const Text('ذخیره'),
+            ),
+          ],
+        );
+      },
     );
   }
 

@@ -10,6 +10,7 @@ class UserModel {
   final UserRole role;
   final bool isBlocked;
   final DateTime? blockedUntil;
+  final String? fcmToken;
 
   // Audit fields
   final DateTime? createdAt;
@@ -28,9 +29,10 @@ class UserModel {
     required this.email,
     required this.avatarUrl,
     required this.isOnline,
-    this.role = UserRole.viewer,
+    this.role = UserRole.user,
     this.isBlocked = false,
     this.blockedUntil,
+    this.fcmToken,
     this.createdAt,
     this.createdBy,
     this.modifiedAt,
@@ -50,9 +52,10 @@ class UserModel {
       email: map['email'] ?? '',
       avatarUrl: map['avatarUrl'] ?? '',
       isOnline: map['isOnline'] ?? false,
-      role: UserRole.values.firstWhere((e) => e.toString() == 'UserRole.${map['role']}', orElse: () => UserRole.viewer),
+      role: UserRole.values.firstWhere((e) => e.toString() == 'UserRole.${map['role']}', orElse: () => UserRole.user),
       isBlocked: map['isBlocked'] ?? false,
       blockedUntil: (map['blockedUntil'] as Timestamp?)?.toDate(),
+      fcmToken: map['fcmToken'] as String?,
       createdAt: (map['createdAt'] as Timestamp?)?.toDate(),
       createdBy: map['createdBy'] as String?,
       modifiedAt: (map['modifiedAt'] as Timestamp?)?.toDate(),
@@ -73,6 +76,7 @@ class UserModel {
       'role': role.toString().split('.').last,
       'isBlocked': isBlocked,
       'blockedUntil': blockedUntil != null ? Timestamp.fromDate(blockedUntil!) : null,
+      'fcmToken': fcmToken,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
       'createdBy': createdBy,
       'modifiedAt': modifiedAt != null ? Timestamp.fromDate(modifiedAt!) : null,
@@ -92,6 +96,7 @@ class UserModel {
     UserRole? role,
     bool? isBlocked,
     DateTime? blockedUntil,
+    String? fcmToken,
     DateTime? createdAt,
     String? createdBy,
     DateTime? modifiedAt,
@@ -109,6 +114,7 @@ class UserModel {
       role: role ?? this.role,
       isBlocked: isBlocked ?? this.isBlocked,
       blockedUntil: blockedUntil ?? this.blockedUntil,
+      fcmToken: fcmToken ?? this.fcmToken,
       createdAt: createdAt ?? this.createdAt,
       createdBy: createdBy ?? this.createdBy,
       modifiedAt: modifiedAt ?? this.modifiedAt,

@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:futsal_app/features/admin/domain/repositories/admin_repository.dart';
+import 'package:futsal_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:futsal_app/features/futsal/domain/entities/futsal_field.dart';
 import 'package:futsal_app/features/profile/data/models/user_model.dart';
 import 'package:futsal_app/features/profile/data/models/user_role.dart';
+import 'package:futsal_app/features/profile/presentation/view_models/user_view_model.dart';
 
 class AdminViewModel extends ChangeNotifier {
   final AdminRepository _adminRepository;
+  final AuthRepository _authRepository;
 
-  AdminViewModel(this._adminRepository);
+  AdminViewModel(this._adminRepository, this._authRepository);
 
   List<UserModel> _allUsers = [];
   List<UserModel> _filteredUsers = [];
@@ -45,6 +48,14 @@ class AdminViewModel extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  UserModel? getUserById(String id) {
+    try {
+      return _allUsers.firstWhere((user) => user.uid == id);
+    } catch (e) {
+      return null;
     }
   }
 
@@ -87,18 +98,20 @@ class AdminViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> updateUserRole(String userId, UserRole newRole) async {
+  Future<void> updateUserRole(
+      String userId, UserRole newRole, UserViewModel userViewModel) async {
     try {
       await _adminRepository.updateUserRole(userId, newRole);
       _successMessage = 'نقش کاربر با موفقیت تغییر کرد';
       await fetchData();
+      await userViewModel.refreshUser();
     } catch (e) {
       _error = e.toString();
       notifyListeners();
     }
   }
 
-    Future<void> blockUser(String userId, DateTime? blockedUntil) async {
+  Future<void> blockUser(String userId, DateTime? blockedUntil) async {
     try {
       await _adminRepository.blockUser(userId, blockedUntil);
       _successMessage = 'کاربر با موفقیت مسدود شد';
@@ -114,6 +127,15 @@ class AdminViewModel extends ChangeNotifier {
       await _adminRepository.updateUser(user);
       _successMessage = 'اطلاعات کاربر با موفقیت ویرایش شد';
       await fetchData();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> logout() async {
+    try {
+      await _authRepository.logout();
     } catch (e) {
       _error = e.toString();
       notifyListeners();

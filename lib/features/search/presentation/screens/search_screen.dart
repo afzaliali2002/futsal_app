@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:futsal_app/core/services/cloudinary_service.dart';
 import 'package:futsal_app/features/futsal/presentation/screens/field_detail_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:futsal_app/features/futsal/data/repositories/futsal_repository_impl.dart';
 import 'package:futsal_app/features/futsal/domain/usecases/search_futsal_fields_usecase.dart';
 import '../providers/search_provider.dart';
@@ -19,7 +19,7 @@ class SearchScreen extends StatelessWidget {
         SearchFutsalFieldsUseCase(
           FutsalRepositoryImpl(
             firestore: FirebaseFirestore.instance,
-            storage: FirebaseStorage.instance,
+            cloudinary: cloudinary,
           ),
         ),
       ),

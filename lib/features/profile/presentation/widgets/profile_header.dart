@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:futsal_app/features/profile/data/models/user_role.dart';
+import 'package:shamsi_date/shamsi_date.dart';
 import '../../data/models/user_model.dart';
 
 class ProfileHeader extends StatelessWidget {
@@ -10,9 +11,15 @@ class ProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String avatar = user.avatarUrl.trim();
-    final String joinDate = user.createdAt != null
-        ? DateFormat.yMMMMd('fa_IR').format(user.createdAt!)
-        : 'تاریخ عضویت نامشخص';
+    final String joinDate;
+
+    if (user.createdAt != null) {
+      final Jalali jalaliDate = Jalali.fromDateTime(user.createdAt!);
+      final f = jalaliDate.formatter;
+      joinDate = '${f.yyyy} ${f.mN} ${f.d}';
+    } else {
+      joinDate = 'تاریخ عضویت نامشخص';
+    }
 
     return Padding(
       padding: const EdgeInsets.only(top: 20, bottom: 20),
@@ -47,21 +54,39 @@ class ProfileHeader extends StatelessWidget {
           ),
           const SizedBox(height: 15),
 
+          /// User Role
+          Text(
+            user.role.translate(),
+            style: TextStyle(
+              color: Colors.blue.shade800,
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 10),
+
           /// Join Date
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              "عضو از $joinDate",
-              style: TextStyle(
-                color: Colors.grey.shade800,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                "عضو از $joinDate",
+                style: TextStyle(
+                  color: Colors.grey.shade800,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
+              const SizedBox(width: 8),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade300,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
           ),
         ],
       ),

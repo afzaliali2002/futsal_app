@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:futsal_app/core/services/cloudinary_service.dart';
+import 'package:futsal_app/features/profile/data/models/user_role.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -126,9 +128,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> with WidgetsBindi
       String? newAvatarUrl;
 
       if (_avatarImage != null) {
-        final storageRef = FirebaseStorage.instance.ref().child('user_avatars/${firebaseUser.uid}/avatar.jpg');
-        final uploadTask = storageRef.putFile(_avatarImage!);
-        newAvatarUrl = await (await uploadTask).ref.getDownloadURL();
+        final response = await cloudinary.uploadFile(
+          CloudinaryFile.fromFile(
+            _avatarImage!.path,
+            resourceType: CloudinaryResourceType.Image,
+            folder: 'user_avatars/${firebaseUser.uid}',
+          ),
+        );
+        newAvatarUrl = response.secureUrl;
       }
 
       if (_emailController.text.trim() != localUser.email) {
@@ -175,9 +182,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> with WidgetsBindi
     } on FirebaseException catch (e) {
         if (!mounted) return;
         if (e.code == 'object-not-found') {
-          _showErrorDialog('خطا در آپلود تصویر. ممکن است فضای ذخیره‌سازی پروژه فایربیس شما فعال نباشد یا قوانین امنیتی آن اجازه آپلود را نمی‌دهد. لطفاً تنظیمات پروژه خود را در کنسول فایربیس بررسی کنید.');
+          _showErrorDialog('خطا در آپلود تصویر. ممکن است فضای ذخیره‌سازی پروژه شما فعال نباشد یا قوانین امنیتی آن اجازه آپلود را نمی‌دهد. لطفاً تنظیمات پروژه خود را بررسی کنید.');
         } else {
-          _showErrorDialog('خطای سرویس فایربیس: ${e.message}');
+          _showErrorDialog('خطای سرویس: ${e.message}');
         }
     } catch (e) {
       if (!mounted) return;
@@ -342,6 +349,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> with WidgetsBindi
                                   decoration: const InputDecoration(labelText: 'ایمیل', prefixIcon: Icon(Icons.email_outlined), border: UnderlineInputBorder()),
                                   keyboardType: TextInputType.emailAddress,
                                   validator: (value) => (value!.isEmpty || !value.contains('@')) ? 'لطفاً ایمیل معتبری وارد کنید' : null,
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  initialValue: widget.user.role.translate(),
+                                  enabled: false,
+                                  decoration: const InputDecoration(labelText: 'نقش کاربری', prefixIcon: Icon(Icons.verified_user_outlined), border: UnderlineInputBorder()),
                                 ),
                               ],
                             ),

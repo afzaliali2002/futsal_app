@@ -3,22 +3,22 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
+  static const Color primaryGreen = Color(0xFF4CAF50);
+  static const Color secondaryBlue = Color(0xFF2196F3);
+  static const Color backgroundWhite = Color(0xFFFFFFFF);
+  static const Color textIconsDark = Color(0xFF212121);
+  static const Color accentRed = Color(0xFFF44336);
+  
+  // Legacy support or new harmonized names (optional, based on your previous usage)
   // 🔹 Dark Theme Colors
-  static const Color darkBackground = Color(0xFF2D3142);
-  static const Color darkCard = Color(0xFF3A3F51);
-  static const Color darkSurface = Color(0xFF4F5467);
+  static const Color darkBackground = Color(0xFF212121); // Using dark text color as background for dark mode? Or closer to Material Dark
+  static const Color darkCard = Color(0xFF303030);
+  static const Color darkSurface = Color(0xFF424242);
   static const Color darkTextPrimary = Colors.white;
-  static const Color darkTextSecondary = Color(0xFFBFC3D0);
-  static const Color accentOrange = Color(0xFFFF8C00);
-  static const Color accentOrangeLight = Color(0xFFFFA540);
-  static const Color borderGray = Color(0xFF6E7285);
-
-  // 🟡 Light Theme Colors (Harmonized with Dark Theme)
-  static const Color lightBackground = Color(0xFFF8F9FA); // Off-white
-  static const Color lightCard = Colors.white;           // Pure white for cards
-  static const Color lightSurface = Color(0xFFF1F3F5);   // Very light gray
-  static const Color lightTextPrimary = Color(0xFF212529); // Almost black
-  static const Color lightTextSecondary = Color(0xFF6C757D); // Medium gray
-  static const Color lightAccentOrange = Color(0xFFFF8C00); // Same vibrant orange
-  static const Color lightBorderGray = Color(0xFFCED4DA); // Soft border gray
+  static const Color darkTextSecondary = Color(0xFFB0B0B0);
+  
+  // You can alias your main colors to standard names if you prefer using AppColors.primary
+  static const Color primary = primaryGreen;
+  static const Color secondary = secondaryBlue;
+  static const Color error = accentRed;
 }

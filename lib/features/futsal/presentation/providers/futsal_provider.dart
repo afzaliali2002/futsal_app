@@ -1,5 +1,5 @@
+import 'dart:async';
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../domain/entities/futsal_field.dart';
 import '../../domain/usecases/add_futsal_field_usecase.dart';
@@ -12,61 +12,53 @@ class FutsalViewModel extends ChangeNotifier {
   FutsalViewModel({
     required this.getFutsalFieldsUseCase,
     required this.addFutsalFieldUseCase,
-  });
+  }) {
+    _listenToFutsalFields();
+  }
 
   List<FutsalField> _fields = [];
   List<FutsalField> get fields => _fields;
 
-  bool _isLoading = false;
+  bool _isLoading = true;
   bool get isLoading => _isLoading;
 
   String? _error;
   String? get error => _error;
 
-  Future<void> fetchFutsalFields() async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+  StreamSubscription<List<FutsalField>>? _futsalSubscription;
 
+  void _listenToFutsalFields() {
+    _futsalSubscription = getFutsalFieldsUseCase().listen(
+      (fieldsData) {
+        _fields = fieldsData;
+        _isLoading = false;
+        notifyListeners();
+      },
+      onError: (e) {
+        _error = e.toString();
+        _isLoading = false;
+        notifyListeners();
+      },
+    );
+  }
+
+  Future<void> addFutsalField({
+    required FutsalField field,
+    File? coverImage,
+    List<File>? galleryImages,
+  }) async {
     try {
-      _fields = await getFutsalFieldsUseCase();
+      await addFutsalFieldUseCase(field, coverImage, galleryImages ?? []);
     } catch (e) {
       _error = e.toString();
-    } finally {
-      _isLoading = false;
       notifyListeners();
+      rethrow;
     }
   }
 
-  // GUARANTEED FIX: Made lat/long/image nullable to match your request
-  Future<void> addFutsalField({
-    required String name,
-    required String address,
-    required double pricePerHour,
-    required List<String> features,
-    required String ownerId,
-    double? latitude,
-    double? longitude,
-    File? image,
-  }) async {
-    GeoPoint? location;
-    if (latitude != null && longitude != null) {
-      location = GeoPoint(latitude, longitude);
-    }
-
-    final newField = FutsalField(
-      id: '',
-      name: name,
-      address: address,
-      pricePerHour: pricePerHour,
-      rating: 0,
-      imageUrl: '',
-      features: features,
-      location: location,
-      ownerId: ownerId,
-    );
-
-    await addFutsalFieldUseCase(newField, image);
-    await fetchFutsalFields();
+  @override
+  void dispose() {
+    _futsalSubscription?.cancel();
+    super.dispose();
   }
 }

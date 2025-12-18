@@ -58,6 +58,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "318853381366-fsda0rko3t9pj7db914m3sncq5d9568p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.futsal_app",
+            "certificate_hash": "a8bf9837550be50c7617a386a02c40e433ed16ba"
+          }
+        },
+        {
           "client_id": "318853381366-vqg8t72af57qp8jblo7u3557dm3a6f11.apps.googleusercontent.com",
           "client_type": 3
         }

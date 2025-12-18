@@ -1,23 +1,33 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:futsal_app/core/services/cloudinary_service.dart';
+import 'package:futsal_app/core/services/notification_service.dart';
 import 'package:futsal_app/features/auth/presentation/screens/home_screen.dart';
-import 'package:futsal_app/features/auth/presentation/widgets/auth_wrapper.dart';
+import 'package:futsal_app/features/auth/presentation/screens/auth_wrapper.dart';
+import 'package:futsal_app/features/booking/data/repositories/booking_repository_impl.dart';
+import 'package:futsal_app/features/booking/domain/repositories/booking_repository.dart';
+import 'package:futsal_app/features/booking/presentation/view_models/booking_view_model.dart';
+import 'package:futsal_app/features/core/presentation/screens/startup_screen.dart';
 import 'package:futsal_app/features/futsal/data/repositories/futsal_repository_impl.dart';
 import 'package:futsal_app/features/futsal/domain/repositories/futsal_repository.dart';
 import 'package:futsal_app/features/futsal/domain/usecases/add_futsal_field_usecase.dart';
 import 'package:futsal_app/features/futsal/domain/usecases/get_futsal_fields_usecase.dart';
 import 'package:futsal_app/features/futsal/presentation/providers/futsal_view_model.dart';
 import 'package:futsal_app/features/futsal/presentation/screens/add_futsal_ground_screen.dart';
+import 'package:futsal_app/features/notification/data/repositories/notification_repository_impl.dart';
+import 'package:futsal_app/features/notification/domain/repositories/notification_repository.dart';
+import 'package:futsal_app/features/notification/domain/usecases/get_notifications_use_case.dart';
 import 'package:futsal_app/features/notification/presentation/providers/notification_view_model.dart';
+import 'package:futsal_app/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:futsal_app/features/profile/presentation/view_models/user_view_model.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 
 // Firebase
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'features/auth/presentation/screens/splash_screen.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 
 // Theme
@@ -46,6 +56,10 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+  await NotificationService().initialize();
+
   runApp(const MyApp());
 }
 
@@ -58,9 +72,9 @@ class MyApp extends StatelessWidget {
       providers: [
         // AUTH
         Provider<AuthRepository>(
-          create: (_) => AuthRepositoryImpl(FirebaseAuth.instance, FirebaseFirestore.instance),
+          create: (_) => AuthRepositoryImpl(FirebaseAuth.instance, FirebaseFirestore.instance, GoogleSignIn()),
         ),
-        StreamProvider<User?>(
+        StreamProvider<User?>( 
           create: (context) => context.read<AuthRepository>().authStateChanges,
           initialData: null,
         ),
@@ -82,7 +96,7 @@ class MyApp extends StatelessWidget {
         Provider<FutsalRepository>(
           create: (_) => FutsalRepositoryImpl(
             firestore: FirebaseFirestore.instance,
-            storage: FirebaseStorage.instance,
+            cloudinary: cloudinary,
           ),
         ),
         Provider(
@@ -99,9 +113,24 @@ class MyApp extends StatelessWidget {
           ),
         ),
 
+        // BOOKING
+        Provider<BookingRepository>(
+          create: (_) => BookingRepositoryImpl(FirebaseFirestore.instance),
+        ),
+        
         // NOTIFICATION
+        Provider<NotificationRepository>(
+          create: (_) => NotificationRepositoryImpl(FirebaseFirestore.instance),
+        ),
+         Provider(
+          create: (context) => GetNotificationsUseCase(context.read<NotificationRepository>()),
+        ),
         ChangeNotifierProvider(
-          create: (context) => NotificationViewModel(),
+          create: (context) => NotificationViewModel(context.read<GetNotificationsUseCase>(), context.read<NotificationRepository>()),
+        ),
+        
+        ChangeNotifierProvider(
+          create: (context) => BookingViewModel(context.read<BookingRepository>(), context.read<NotificationRepository>()),
         ),
       ],
       child: MaterialApp(
@@ -112,15 +141,14 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
 
         // ROUTING
-        initialRoute: '/',
+        home: const StartupScreen(),
         routes: {
-          '/': (context) => const SplashScreen(),
-          '/auth-wrapper':(context) => const AuthWrapper(),
-          '/login': (context) => const LoginScreen(),
           '/signup': (context) => const SignupScreen(),
+          '/login': (context) => const LoginScreen(),
           '/home': (context) => const HomeScreen(),
           '/booking': (context) => const BookingFormScreen(),
           '/add-ground': (context) => const AddFutsalGroundScreen(),
+          '/onboarding': (context) => const OnboardingScreen(),
         },
 
         // LOCALIZATION & RTL

@@ -13,11 +13,24 @@ dependencies:
   cloud_firestore: ^4.17.0
   firebase_storage: ^11.7.0
   shared_preferences: ^2.5.3
+  cloudinary_public: ^0.10.0
+  flutter_rating_bar: ^4.0.1
   provider: ^6.1.2
   flutter_localizations:
     sdk: flutter
   image_picker: ^1.1.2
   permission_handler: ^11.3.1
+  intl: ^0.20.2
+  shamsi_date: ^1.0.1
+  google_sign_in: ^6.2.1
+  google_maps_flutter: ^2.6.1
+  geocoding: ^2.2.1
+  location: ^5.0.3
+  badges: ^3.1.2
+  url_launcher: ^6.3.0
+  another_flushbar: ^1.12.30
+  firebase_messaging: ^14.9.0
+  flutter_local_notifications: ^17.1.2
 
 dev_dependencies:
   flutter_test:
@@ -37,4 +50,3 @@ flutter:
     - family: BNazanin
       fonts:
         - asset: assets/fonts/b-nazanin-outline.ttf
-

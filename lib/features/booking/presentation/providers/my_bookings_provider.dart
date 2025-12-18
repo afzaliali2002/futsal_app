@@ -1,10 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../profile/data/models/user_model.dart';
 import '../../domain/usecases/get_my_bookings_use_case.dart';
 import '../../data/models/booking_model.dart';
 
 class MyBookingsProvider extends ChangeNotifier {
   final GetMyBookingsUseCase getMyBookingsUseCase;
+  StreamSubscription? _bookingsSubscription;
 
   MyBookingsProvider(this.getMyBookingsUseCase);
 
@@ -17,18 +18,27 @@ class MyBookingsProvider extends ChangeNotifier {
   String? _error;
   String? get error => _error;
 
-  Future<void> fetchBookings(String userId) async {
+  void listenToMyBookings(String userId) {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
-    try {
-      _bookings = await getMyBookingsUseCase(userId);
-    } catch (e) {
+    _bookingsSubscription?.cancel();
+    _bookingsSubscription = getMyBookingsUseCase(userId).listen((bookingsData) {
+      _bookings = bookingsData;
+      _isLoading = false;
+      _error = null;
+      notifyListeners();
+    }, onError: (e) {
       _error = e.toString();
-    } finally {
       _isLoading = false;
       notifyListeners();
-    }
+    });
+  }
+
+  @override
+  void dispose() {
+    _bookingsSubscription?.cancel();
+    super.dispose();
   }
 }

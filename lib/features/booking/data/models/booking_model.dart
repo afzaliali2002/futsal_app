@@ -1,57 +1,58 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-enum BookingStatus { upcoming, completed, canceled }
+import 'package:futsal_app/features/booking/domain/entities/booking_status.dart';
 
 class BookingModel {
   final String id;
+  final String groundId;
   final String userId;
-  final String futsalId;
   final String futsalName;
-  final DateTime? date; // Made nullable
-  final String timeSlot;
+  final DateTime startTime;
+  final DateTime endTime;
   final double price;
   final BookingStatus status;
-  final DateTime? createdAt; // Made nullable
+  final String bookerName;
+  final String bookerPhone;
 
   BookingModel({
     required this.id,
+    required this.groundId,
     required this.userId,
-    required this.futsalId,
     required this.futsalName,
-    this.date, // Made nullable
-    required this.timeSlot,
+    required this.startTime,
+    required this.endTime,
     required this.price,
-    this.status = BookingStatus.upcoming,
-    this.createdAt, // Made nullable
+    required this.status,
+    required this.bookerName,
+    required this.bookerPhone,
   });
 
-  factory BookingModel.fromMap(Map<String, dynamic> map, String id) {
+  factory BookingModel.fromSnapshot(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
     return BookingModel(
-      id: id,
-      userId: map['userId'] ?? '',
-      futsalId: map['futsalId'] ?? '',
-      futsalName: map['futsalName'] ?? '',
-      date: (map['date'] as Timestamp?)?.toDate(), // Safely parse nullable Timestamp
-      timeSlot: map['timeSlot'] ?? '',
-      price: (map['price'] as num?)?.toDouble() ?? 0.0, // Made safer
-      status: BookingStatus.values.firstWhere(
-        (e) => e.toString() == 'BookingStatus.${map['status']}',
-        orElse: () => BookingStatus.upcoming,
-      ),
-      createdAt: (map['createdAt'] as Timestamp?)?.toDate(), // Safely parse nullable Timestamp
+      id: doc.id,
+      groundId: data['groundId'] ?? '',
+      userId: data['userId'] ?? '',
+      futsalName: data['futsalName'] ?? '',
+      startTime: (data['startTime'] as Timestamp).toDate(),
+      endTime: (data['endTime'] as Timestamp).toDate(),
+      price: (data['price'] as num).toDouble(),
+      status: BookingStatus.values.firstWhere((e) => e.toString() == 'BookingStatus.${data['status']}', orElse: () => BookingStatus.upcoming),
+      bookerName: data['bookerName'] ?? '',
+      bookerPhone: data['bookerPhone'] ?? '',
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
+      'groundId': groundId,
       'userId': userId,
-      'futsalId': futsalId,
       'futsalName': futsalName,
-      'date': date != null ? Timestamp.fromDate(date!) : null,
-      'timeSlot': timeSlot,
+      'startTime': startTime,
+      'endTime': endTime,
       'price': price,
       'status': status.toString().split('.').last,
-      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
+      'bookerName': bookerName,
+      'bookerPhone': bookerPhone,
     };
   }
 }

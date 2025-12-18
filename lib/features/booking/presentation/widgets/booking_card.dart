@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:futsal_app/features/booking/domain/entities/booking_status.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/booking_model.dart';
 
@@ -11,22 +12,24 @@ class BookingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dateFormat = DateFormat('EEEE, d MMMM yyyy', 'fa_IR');
+    final timeFormat = DateFormat('HH:mm');
     final statusText = {
       BookingStatus.upcoming: 'آینده',
       BookingStatus.completed: 'تکمیل شده',
-      BookingStatus.canceled: 'لغو شده',
+      BookingStatus.cancelled: 'لغو شده',
+      BookingStatus.pending: 'در انتظار تایید',
+      BookingStatus.confirmed: 'تایید شده',
     };
     final statusColor = {
       BookingStatus.upcoming: Colors.blue,
       BookingStatus.completed: Colors.green,
-      BookingStatus.canceled: Colors.red,
+      BookingStatus.cancelled: Colors.red,
+      BookingStatus.pending: Colors.orange,
+      BookingStatus.confirmed: Colors.green,
     };
 
-    // Handle null date
-    final String formattedDate = booking.date != null 
-        ? dateFormat.format(booking.date!)
-        : 'تاریخ در دسترس نیست';
-
+    final String formattedDate = dateFormat.format(booking.startTime);
+    final String formattedTime = '${timeFormat.format(booking.startTime)} - ${timeFormat.format(booking.endTime)}';
     final String formattedPrice = booking.price > 0
         ? '${NumberFormat.decimalPattern('fa_IR').format(booking.price)} تومان'
         : 'رایگان';
@@ -66,7 +69,7 @@ class BookingCard extends StatelessWidget {
             const SizedBox(height: 10),
             _buildInfoRow(Icons.calendar_today_outlined, formattedDate),
             const SizedBox(height: 6),
-            _buildInfoRow(Icons.access_time_outlined, booking.timeSlot),
+            _buildInfoRow(Icons.access_time_outlined, formattedTime),
             const SizedBox(height: 6),
             _buildInfoRow(Icons.attach_money_outlined, formattedPrice),
           ],
@@ -85,6 +88,3 @@ class BookingCard extends StatelessWidget {
     );
   }
 }
-/*
-  i want that i have the search in the top like this and i should have like this user icon that user see depending info on that and in the nav only three important things should be fixed for me   and untill now i can not get anything or see blank space in the serach screen fixed that for both of that
- */

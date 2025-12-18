@@ -2,14 +2,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:futsal_app/features/profile/data/models/user_model.dart';
 import 'package:futsal_app/features/profile/data/models/user_role.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../domain/repositories/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final FirebaseAuth _firebaseAuth;
   final FirebaseFirestore _firestore;
+  final GoogleSignIn _googleSignIn;
   static const String _adminEmail = 'alidanishafzali21@gmail.com';
 
-  AuthRepositoryImpl(this._firebaseAuth, this._firestore);
+  AuthRepositoryImpl(this._firebaseAuth, this._firestore, this._googleSignIn);
 
   @override
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
@@ -26,12 +28,8 @@ class AuthRepositoryImpl implements AuthRepository {
         email: email,
         password: password,
       );
-      final user = userCredential.user;
-      if (user != null) {
-        await getUserDetails(user.uid); // Ensure user document exists
-      }
-      return user;
-    } catch (e) {
+      return userCredential.user;
+    } on FirebaseAuthException catch (e) {
       rethrow;
     }
   }
@@ -49,55 +47,154 @@ class AuthRepositoryImpl implements AuthRepository {
           uid: user.uid,
           name: name,
           email: email,
-          role: email == _adminEmail ? UserRole.admin : UserRole.viewer,
+          role: email == _adminEmail ? UserRole.admin : UserRole.user,
           avatarUrl: '',
           isOnline: false,
+          createdAt: DateTime.now(),
         );
         await _firestore.collection('users').doc(user.uid).set(newUser.toMap());
       }
       return user;
-    } catch (e) {
+    } on FirebaseAuthException catch (e) {
       rethrow;
     }
   }
 
   @override
+  Future<User?> signInWithGoogle() async {
+    try {
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) return null;
+
+      final userDoc = await _firestore.collection('users').where('email', isEqualTo: googleUser.email).get();
+      if (userDoc.docs.isEmpty) {
+        await _googleSignIn.signOut();
+        throw FirebaseAuthException(code: 'user-not-found');
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential = await _firebaseAuth.signInWithCredential(credential);
+      return userCredential.user;
+    } on FirebaseAuthException catch (e) {
+      await _googleSignIn.signOut();
+      rethrow;
+    }
+  }
+
+  @override
+  Future<User?> signUpWithGoogle() async {
+    try {
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) return null;
+
+      final googleAuth = await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential = await _firebaseAuth.signInWithCredential(credential);
+      final user = userCredential.user;
+
+      if (user != null) {
+        final userDoc = await _firestore.collection('users').doc(user.uid).get();
+        if (!userDoc.exists) {
+          final newUser = UserModel(
+            uid: user.uid,
+            name: user.displayName ?? '',
+            email: user.email ?? '',
+            role: user.email == _adminEmail ? UserRole.admin : UserRole.user,
+            avatarUrl: user.photoURL ?? '',
+            isOnline: false,
+            createdAt: DateTime.now(),
+          );
+          await _firestore.collection('users').doc(user.uid).set(newUser.toMap());
+        }
+      }
+      return user;
+    } on FirebaseAuthException catch (e) {
+      await _googleSignIn.signOut();
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> signOutFromGoogle() async {
+    await _googleSignIn.signOut();
+  }
+
+  @override
   Future<void> logout() async {
+    await _googleSignIn.signOut();
     await _firebaseAuth.signOut();
   }
 
   @override
-  Future<UserModel?> getUserDetails(String uid) async {
-    final userDocRef = _firestore.collection('users').doc(uid);
-    final doc = await userDocRef.get();
-
-    if (doc.exists) {
-      // User document exists, load it
-      final user = UserModel.fromMap(doc.data()!, uid);
-      // Always override role if email matches admin email, as a security measure
-      if (user.email == _adminEmail && user.role != UserRole.admin) {
-        await userDocRef.update({'role': UserRole.admin.toString().split('.').last});
-        return user.copyWith(role: UserRole.admin);
+  Stream<UserModel?> getUserDetails(String uid) {
+    return _firestore.collection('users').doc(uid).snapshots().map((snapshot) {
+      if (snapshot.exists) {
+        final user = UserModel.fromMap(snapshot.data()!, uid);
+        if (user.email == _adminEmail && user.role != UserRole.admin) {
+          _firestore.collection('users').doc(uid).update({'role': 'admin'});
+          return user.copyWith(role: UserRole.admin);
+        }
+        return user;
+      } else {
+        return null;
       }
-      return user;
-    } else {
-      // User document does not exist, but user is authenticated. Create it.
-      final firebaseUser = _firebaseAuth.currentUser;
-      if (firebaseUser != null && firebaseUser.uid == uid) {
-        final role = firebaseUser.email == _adminEmail ? UserRole.admin : UserRole.viewer;
+    });
+  }
+
+  @override
+  Future<void> saveFCMToken(String uid, String token) async {
+    await _firestore.collection('users').doc(uid).update({'fcmToken': token});
+  }
+
+  @override
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required void Function(PhoneAuthCredential) verificationCompleted,
+    required void Function(FirebaseAuthException) verificationFailed,
+    required void Function(String, int?) codeSent,
+    required void Function(String) codeAutoRetrievalTimeout,
+  }) async {
+    await _firebaseAuth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        // Auto-retrieval or instant verification
+        final userCredential = await signInWithCredential(credential);
+        verificationCompleted(userCredential.credential as PhoneAuthCredential);
+      },
+      verificationFailed: verificationFailed,
+      codeSent: codeSent,
+      codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
+    );
+  }
+
+  @override
+  Future<UserCredential> signInWithCredential(PhoneAuthCredential credential) async {
+    final userCredential = await _firebaseAuth.signInWithCredential(credential);
+    final user = userCredential.user;
+    if (user != null) {
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
         final newUser = UserModel(
-          uid: uid,
-          name: firebaseUser.displayName ?? 'New User',
-          email: firebaseUser.email!,
-          avatarUrl: firebaseUser.photoURL ?? '',
-          isOnline: true,
-          role: role,
+          uid: user.uid,
+          name: 'کاربر جدید', // Default name
+          email: user.phoneNumber ?? '', // Use phone number if email is null
+          role: UserRole.user,
+          avatarUrl: '',
+          isOnline: false,
+          createdAt: DateTime.now(),
         );
-        // Save the new user document to Firestore
-        await userDocRef.set(newUser.toMap());
-        return newUser;
+        await _firestore.collection('users').doc(user.uid).set(newUser.toMap());
       }
     }
-    return null;
+    return userCredential;
   }
 }

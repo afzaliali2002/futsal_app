@@ -1,37 +1,59 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:futsal_app/features/notification/domain/entities/notification.dart';
 
-class NotificationModel extends Notification {
+enum NotificationType {
+  bookingRequest,
+  bookingConfirmation,
+  bookingCancellation,
+  paymentUpdate,
+  systemAlert,
+}
+
+class NotificationModel {
+  final String id;
+  final String userId; // The ID of the user who should receive the notification
+  final String title;
+  final String body;
+  final NotificationType type;
+  final Map<String, dynamic> metadata; // e.g., {'bookingId': 'xyz', 'groundId': 'abc'}
+  final DateTime createdAt;
+  final bool isRead;
+
   NotificationModel({
-    required String id,
-    required String title,
-    required String body,
-    required Timestamp timestamp,
-    bool isRead = false,
-  }) : super(
-          id: id,
-          title: title,
-          body: body,
-          timestamp: timestamp,
-          isRead: isRead,
-        );
+    required this.id,
+    required this.userId,
+    required this.title,
+    required this.body,
+    required this.type,
+    this.metadata = const {},
+    required this.createdAt,
+    this.isRead = false,
+  });
 
-  factory NotificationModel.fromSnapshot(DocumentSnapshot snapshot) {
-    final data = snapshot.data() as Map<String, dynamic>;
+  factory NotificationModel.fromSnapshot(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
     return NotificationModel(
-      id: snapshot.id,
+      id: doc.id,
+      userId: data['userId'] ?? '',
       title: data['title'] ?? '',
       body: data['body'] ?? '',
-      timestamp: data['timestamp'] ?? Timestamp.now(),
+      type: NotificationType.values.firstWhere(
+        (e) => e.toString() == 'NotificationType.${data['type']}',
+        orElse: () => NotificationType.systemAlert,
+      ),
+      metadata: Map<String, dynamic>.from(data['metadata'] ?? {}),
+      createdAt: (data['createdAt'] as Timestamp).toDate(),
       isRead: data['isRead'] ?? false,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
+      'userId': userId,
       'title': title,
       'body': body,
-      'timestamp': timestamp,
+      'type': type.toString().split('.').last,
+      'metadata': metadata,
+      'createdAt': FieldValue.serverTimestamp(),
       'isRead': isRead,
     };
   }

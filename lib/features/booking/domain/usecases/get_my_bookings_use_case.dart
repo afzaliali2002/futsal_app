@@ -5,7 +5,7 @@ class GetMyBookingsUseCase {
 
   GetMyBookingsUseCase(this.repository);
 
-  Future<List<BookingModel>> call(String userId) {
+  Stream<List<BookingModel>> call(String userId) {
     return repository.getMyBookings(userId);
   }
 }

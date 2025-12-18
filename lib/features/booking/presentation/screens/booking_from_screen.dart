@@ -1,8 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:futsal_app/features/futsal/domain/entities/futsal_field.dart';
+import 'package:intl/intl.dart';
 
 class BookingFormScreen extends StatefulWidget {
   const BookingFormScreen({super.key});
@@ -12,312 +10,159 @@ class BookingFormScreen extends StatefulWidget {
 }
 
 class _BookingFormScreenState extends State<BookingFormScreen> {
-  DateTime _selectedDate = DateTime.now();
-  String? _selectedTime;
-  double _selectedDuration = 1.5;
-  bool _isBooking = false;
-
-  FutsalField? field;
+  final _formKey = GlobalKey<FormState>();
+  DateTime? _selectedDate;
+  TimeOfDay? _selectedTime;
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (field == null) {
-      final arguments = ModalRoute.of(context)!.settings.arguments;
-      if (arguments is FutsalField) {
-        setState(() {
-          field = arguments;
-        });
-      } else {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('خطا: اطلاعات زمین برای رزرو یافت نشد.'), backgroundColor: Colors.red),
-            );
-          }
-        });
-      }
-    }
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+  void _presentDatePicker() {
+    showDatePicker(
       context: context,
-      initialDate: _selectedDate,
+      initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 30)),
-    );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
+    ).then((pickedDate) {
+      if (pickedDate == null) return;
+      setState(() => _selectedDate = pickedDate);
+    });
   }
 
-  Future<void> _confirmBooking() async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    if (_selectedTime == null) {
-      scaffoldMessenger.showSnackBar(
-        const SnackBar(content: Text('لطفاً ابتدا ساعت شروع را انتخاب کنید.'), backgroundColor: Colors.red),
-      );
-      return;
-    }
+  void _presentTimePicker() {
+    showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    ).then((pickedTime) {
+      if (pickedTime == null) return;
+      setState(() => _selectedTime = pickedTime);
+    });
+  }
 
-    setState(() => _isBooking = true);
-
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        throw Exception('برای رزرو زمین باید وارد حساب کاربری خود شوید.');
-      }
-
-      final timeParts = _selectedTime!.split(':');
-      final hour = int.parse(timeParts[0]);
-      final minute = int.parse(timeParts[1]);
-      final bookingStartDateTime = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, hour, minute);
-
-      final pricePerStandardSlot = field!.pricePerHour;
-      final finalPrice = (pricePerStandardSlot / 1.5) * _selectedDuration;
-
-      final bookingData = {
-        'userId': user.uid,
-        'fieldId': field!.id,
-        'fieldName': field!.name,
-        'fieldAddress': field!.address,
-        'fieldImageUrl': field!.imageUrl,
-        'date': Timestamp.fromDate(bookingStartDateTime), // Corrected key
-        'durationHours': _selectedDuration,
-        'totalPrice': finalPrice,
-        'createdAt': Timestamp.now(), // Use local timestamp
-      };
-
-      await FirebaseFirestore.instance.collection('bookings').add(bookingData);
-
-      if (!mounted) return;
-      Navigator.of(context).pop();
-      scaffoldMessenger.showSnackBar(
-        const SnackBar(content: Text('زمین با موفقیت برای شما رزرو شد!'), backgroundColor: Colors.green),
-      );
-
-    } catch (e) {
-      if (mounted) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text('خطا در ثبت رزرو: ${e.toString()}'), backgroundColor: Colors.red),
+  void _submitBooking() {
+    if (_formKey.currentState!.validate()) {
+      if (_selectedDate == null || _selectedTime == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('لطفا تاریخ و زمان را انتخاب کنید')),
         );
+        return;
       }
-    } finally {
-      if (mounted) {
-        setState(() => _isBooking = false);
-      }
+      // TODO: Implement booking logic with a view model
+      // e.g., context.read<BookingViewModel>().createBooking(...);
+      print('Booking Submitted');
+      Navigator.of(context).pop();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final FutsalField? field = ModalRoute.of(context)?.settings.arguments as FutsalField?;
     final theme = Theme.of(context);
 
     if (field == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(child: Text('خطا: مشخصات زمین یافت نشد.')),
       );
     }
 
-    final FutsalField currentField = field!;
-
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('رزرو زمین'),
-        centerTitle: true,
-        elevation: 0,
+        title: Text('رزرو ${field.name}'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 150),
-        children: [
-          _buildFieldSummary(context, currentField),
-          const SizedBox(height: 30),
-          _buildSectionTitle(context, '۱. تاریخ را انتخاب کنید', Icons.calendar_today_outlined),
-          const SizedBox(height: 12),
-          _buildDatePicker(context),
-          const SizedBox(height: 30),
-          _buildSectionTitle(context, '۲. ساعت شروع را انتخاب کنید', Icons.access_time_rounded),
-          const SizedBox(height: 12),
-          _buildTimeSlots(context),
-          const SizedBox(height: 30),
-          _buildSectionTitle(context, '۳. مدت زمان را انتخاب کنید', Icons.hourglass_bottom_rounded),
-          const SizedBox(height: 12),
-          _buildDurationChips(context),
-        ],
-      ),
-      bottomNavigationBar: _buildBookingBottomBar(context, currentField),
-    );
-  }
-
-  Widget _buildFieldSummary(BuildContext context, FutsalField field) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.dividerColor, width: 1.5),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: field.imageUrl.isNotEmpty
-                ? Image.network(field.imageUrl, width: 70, height: 70, fit: BoxFit.cover, errorBuilder: (c, e, s) => Container(width: 70, height: 70, color: theme.dividerColor, child: const Icon(Icons.sports_soccer)))
-                : Container(width: 70, height: 70, color: theme.dividerColor, child: const Icon(Icons.sports_soccer)),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(field.name, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
-                Text(field.address, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.7)), maxLines: 2, overflow: TextOverflow.ellipsis),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(BuildContext context, String title, IconData icon) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Icon(icon, size: 22, color: theme.colorScheme.primary),
-        const SizedBox(width: 8),
-        Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-      ],
-    );
-  }
-
-  Widget _buildDatePicker(BuildContext context) {
-    final theme = Theme.of(context);
-    final formattedDate = DateFormat('EEEE, d MMMM yyyy', 'fa_IR').format(_selectedDate);
-    return InkWell(
-      onTap: () => _selectDate(context),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: theme.dividerColor, width: 1),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(16.0),
           children: [
-            Text(formattedDate, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-            Icon(Icons.edit_calendar_outlined, color: theme.colorScheme.primary),
+            _buildGroundInfoCard(theme, field),
+            const SizedBox(height: 24),
+            Text('اطلاعات شما', style: theme.textTheme.headlineSmall),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(labelText: 'نام شما'),
+              validator: (v) => v!.isEmpty ? 'لطفا نام خود را وارد کنید' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _phoneController,
+              decoration: const InputDecoration(labelText: 'شماره تماس'),
+              keyboardType: TextInputType.phone,
+              validator: (v) => v!.isEmpty ? 'لطفا شماره تماس خود را وارد کنید' : null,
+            ),
+            const SizedBox(height: 24),
+            Text('انتخاب زمان', style: theme.textTheme.headlineSmall),
+            const SizedBox(height: 16),
+            _buildDateTimePicker(
+              label: 'تاریخ',
+              value: _selectedDate != null ? DateFormat('y/MM/d').format(_selectedDate!) : 'انتخاب نشده',
+              onPressed: _presentDatePicker,
+            ),
+            const SizedBox(height: 12),
+            _buildDateTimePicker(
+              label: 'زمان',
+              value: _selectedTime != null ? _selectedTime!.format(context) : 'انتخاب نشده',
+              onPressed: _presentTimePicker,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: _submitBooking,
+              style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+              child: const Text('تایید و ثبت رزرو'),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTimeSlots(BuildContext context) {
-    final List<String> times = ['09:00', '11:00', '14:00', '16:00', '18:00', '20:00'];
-    return SizedBox(
-      height: 45,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: times.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 10),
-        itemBuilder: (context, index) {
-          final time = times[index];
-          return ChoiceChip(
-            label: Text(time),
-            selected: _selectedTime == time,
-            onSelected: (selected) {
-              setState(() {
-                _selectedTime = selected ? time : null;
-              });
-            },
-            labelStyle: Theme.of(context).textTheme.titleMedium?.copyWith(color: _selectedTime == time ? Colors.white : null, fontWeight: FontWeight.bold),
-            selectedColor: Theme.of(context).primaryColor,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          );
-        },
+  Widget _buildGroundInfoCard(ThemeData theme, FutsalField field) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(field.name, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            _buildInfoRow(theme, Icons.location_on_outlined, '${field.address}, ${field.city}'),
+            const SizedBox(height: 4),
+            _buildInfoRow(theme, Icons.payment_outlined, '${field.pricePerHour.toStringAsFixed(0)} ${field.currency} فی ساعت'),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildDurationChips(BuildContext context) {
-    final Map<String, double> durations = {'۱ ساعت': 1.0, '۱.۵ ساعت': 1.5, '۲ ساعت': 2.0};
-    return Wrap(
-      spacing: 12,
-      children: durations.keys.map((label) {
-        final duration = durations[label]!;
-        return ChoiceChip(
-          label: Text(label),
-          selected: _selectedDuration == duration,
-          onSelected: (selected) {
-            if (selected) {
-              setState(() {
-                _selectedDuration = duration;
-              });
-            }
-          },
-          labelStyle: Theme.of(context).textTheme.titleMedium?.copyWith(color: _selectedDuration == duration ? Colors.white : null, fontWeight: FontWeight.bold),
-          selectedColor: Theme.of(context).primaryColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        );
-      }).toList(),
+  Widget _buildInfoRow(ThemeData theme, IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+        const SizedBox(width: 8),
+        Text(text, style: theme.textTheme.bodyMedium),
+      ],
     );
   }
-
-  Widget _buildBookingBottomBar(BuildContext context, FutsalField field) {
-    final theme = Theme.of(context);
-    final pricePerStandardSlot = field.pricePerHour;
-    final finalPrice = (pricePerStandardSlot / 1.5) * _selectedDuration;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15).copyWith(bottom: MediaQuery.of(context).padding.bottom + 15),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, -5))],
-        border: Border(top: BorderSide(color: theme.dividerColor, width: 1.5)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(
-            flex: 2,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('مبلغ نهایی', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6))),
-                const SizedBox(height: 2),
-                Text('${finalPrice.toStringAsFixed(0)} افغانی', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary), maxLines: 1, overflow: TextOverflow.ellipsis),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Flexible(
-            flex: 3,
-            child: ElevatedButton(
-              onPressed: _isBooking ? null : _confirmBooking,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: _isBooking
-                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white))
-                  : const Text('تایید و رزرو', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ),
-          ),
-        ],
-      ),
+  
+  Widget _buildDateTimePicker({required String label, required String value, required VoidCallback onPressed}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.titleMedium),
+        TextButton(
+          onPressed: onPressed,
+          child: Text(value, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.primary)),
+        ),
+      ],
     );
   }
 }
