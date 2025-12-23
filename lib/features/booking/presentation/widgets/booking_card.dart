@@ -3,6 +3,18 @@ import 'package:futsal_app/features/booking/domain/entities/booking_status.dart'
 import 'package:intl/intl.dart';
 import '../../data/models/booking_model.dart';
 
+String _toPersian(String input) {
+  const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  const farsi = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+
+  String result = input;
+  for (int i = 0; i < english.length; i++) {
+    result = result.replaceAll(english[i], farsi[i]);
+  }
+  result = result.replaceAll('AM', 'ق.ظ').replaceAll('PM', 'ب.ظ');
+  return result;
+}
+
 class BookingCard extends StatelessWidget {
   final BookingModel booking;
 
@@ -12,7 +24,7 @@ class BookingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dateFormat = DateFormat('EEEE, d MMMM yyyy', 'fa_IR');
-    final timeFormat = DateFormat('HH:mm');
+    final timeFormat = DateFormat('h:mm a', 'en_US');
     final statusText = {
       BookingStatus.upcoming: 'آینده',
       BookingStatus.completed: 'تکمیل شده',
@@ -29,9 +41,9 @@ class BookingCard extends StatelessWidget {
     };
 
     final String formattedDate = dateFormat.format(booking.startTime);
-    final String formattedTime = '${timeFormat.format(booking.startTime)} - ${timeFormat.format(booking.endTime)}';
+    final String formattedTime = '${_toPersian(timeFormat.format(booking.startTime))} - ${_toPersian(timeFormat.format(booking.endTime))}';
     final String formattedPrice = booking.price > 0
-        ? '${NumberFormat.decimalPattern('fa_IR').format(booking.price)} تومان'
+        ? '${NumberFormat.decimalPattern('fa_IR').format(booking.price)} ${booking.currency}'
         : 'رایگان';
 
     return Card(
@@ -53,13 +65,13 @@ class BookingCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: statusColor[booking.status]?.withOpacity(0.1),
+                    color: (statusColor[booking.status] ?? Colors.grey).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     statusText[booking.status] ?? '',
                     style: TextStyle(
-                      color: statusColor[booking.status],
+                      color: statusColor[booking.status] ?? Colors.grey,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

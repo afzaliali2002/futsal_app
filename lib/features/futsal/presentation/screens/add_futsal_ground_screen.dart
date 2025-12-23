@@ -54,6 +54,8 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
   final _phoneController = TextEditingController();
   final _whatsappController = TextEditingController();
   final _emailController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
 
   bool get isEditMode => widget.field != null;
   String? _existingCoverImageUrl;
@@ -96,6 +98,8 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
     _phoneController.text = field.phoneNumber;
     _whatsappController.text = field.whatsappNumber ?? '';
     _emailController.text = field.email ?? '';
+    _firstNameController.text = field.firstName ?? '';
+    _lastNameController.text = field.lastName ?? '';
   }
 
   @override
@@ -112,33 +116,98 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
     _phoneController.dispose();
     _whatsappController.dispose();
     _emailController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     super.dispose();
   }
 
-  bool _areAllStepsValid() {
-    for (var key in _formKeys) {
-      if (key.currentState == null || !key.currentState!.validate()) {
-        return false;
+  int? _findFirstInvalidStep() {
+    for (int i = 0; i < _formKeys.length; i++) {
+      if (_formKeys[i].currentState != null && !_formKeys[i].currentState!.validate()) {
+        return i;
       }
     }
-    if (_coverImage == null && !isEditMode) return false;
-    return true;
+    if (_coverImage == null && !isEditMode) {
+       return 4;
+    }
+    return null;
+  }
+
+  bool _areAllStepsValid() {
+    return _findFirstInvalidStep() == null;
+  }
+
+  void _showErrorForStep(int stepIndex) {
+    List<String> missing = [];
+    switch (stepIndex) {
+      case 0:
+        if (_groundNameController.text.isEmpty) missing.add('نام زمین');
+        if (_groundType == null) missing.add('نوع زمین');
+        if (_descriptionController.text.isEmpty) missing.add('توضیحات');
+        break;
+      case 1:
+        if (_addressController.text.isEmpty) missing.add('آدرس');
+        if (_cityController.text.isEmpty) missing.add('شهر');
+        break;
+      case 2:
+        if (_priceController.text.isEmpty) missing.add('قیمت');
+        if (_currency == null) missing.add('واحد پول');
+        break;
+      case 4:
+        if (_firstNameController.text.isEmpty) missing.add('نام');
+        if (_lastNameController.text.isEmpty) missing.add('تخلص');
+        if (_phoneController.text.isEmpty) missing.add('شماره تماس');
+        if (_coverImage == null && !isEditMode) missing.add('تصویر کاور');
+        break;
+    }
+
+    String stepTitle = '';
+    final steps = _getSteps();
+    if (stepIndex < steps.length) {
+       final titleWidget = steps[stepIndex].title;
+       if (titleWidget is Text) {
+          stepTitle = titleWidget.data ?? '';
+       }
+    }
+
+    String message;
+    if (missing.isNotEmpty) {
+      message = 'لطفا در بخش "$stepTitle"، موارد زیر را تکمیل کنید:\n${missing.join('، ')}';
+    } else {
+      message = 'لطفا خطاهای موجود در بخش "$stepTitle" را برطرف کنید.';
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   void _onStepContinue() {
-    if (_formKeys[_currentStep].currentState!.validate()) {
-      if (_currentStep < _getSteps().length - 1) {
-        setState(() => _currentStep++);
-      } else {
-        if (_areAllStepsValid()) {
+    if (_formKeys[_currentStep].currentState != null && !_formKeys[_currentStep].currentState!.validate()) {
+       _showErrorForStep(_currentStep);
+       return;
+    }
+
+    if (_currentStep == 4 && _coverImage == null && !isEditMode) {
+        _showErrorForStep(4);
+        return;
+    }
+
+    if (_currentStep < _getSteps().length - 1) {
+       setState(() => _currentStep++);
+    } else {
+       int? invalidStep = _findFirstInvalidStep();
+       if (invalidStep != null) {
+          setState(() => _currentStep = invalidStep);
+          _showErrorForStep(invalidStep);
+       } else {
           _submitForm();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('لطفا تمام فیلدهای الزامی در همه مراحل را پر کنید.')),
-          );
-        }
-      }
+       }
     }
   }
 
@@ -211,6 +280,17 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
     }
 
     try {
+      // Fix: Handle parsing errors for latitude/longitude
+      double? lat;
+      double? lng;
+      
+      try {
+        if (_latitudeController.text.isNotEmpty) lat = double.parse(_latitudeController.text);
+        if (_longitudeController.text.isNotEmpty) lng = double.parse(_longitudeController.text);
+      } catch (_) {
+        // If parsing fails, just ignore location or set default
+      }
+
       final baseField = FutsalField(
         id: widget.field?.id ?? '',
         name: _groundNameController.text,
@@ -218,14 +298,12 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
         description: _descriptionController.text,
         address: _addressController.text,
         city: _cityController.text,
-        location: (_latitudeController.text.isNotEmpty &&
-                _longitudeController.text.isNotEmpty)
-            ? GeoPoint(double.parse(_latitudeController.text),
-                double.parse(_longitudeController.text))
+        location: (lat != null && lng != null)
+            ? GeoPoint(lat, lng)
             : null,
         pricePerHour: double.parse(_priceController.text),
         discount: _discountController.text.isNotEmpty
-            ? double.parse(_discountController.text)
+            ? double.tryParse(_discountController.text) ?? 0.0
             : null,
         currency: _currency ?? 'AFN',
         schedule: _schedule, // Default empty schedule
@@ -243,6 +321,8 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
             : null,
         email:
             _emailController.text.isNotEmpty ? _emailController.text : null,
+        firstName: _firstNameController.text.isNotEmpty ? _firstNameController.text : null,
+        lastName: _lastNameController.text.isNotEmpty ? _lastNameController.text : null,
         ownerId: isEditMode ? widget.field!.ownerId : ownerId,
         autoAcceptBookings: true, // Default value
         bankDetails: null, // Default value
@@ -272,7 +352,7 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
         }
         final newLat = baseField.location?.latitude;
         final newLng = baseField.location?.longitude;
-        final oldLat = oldField.location?.latitude;
+        final oldLat = oldField.location?.longitude;
         final oldLng = oldField.location?.longitude;
         if (newLat != oldLat || newLng != oldLng) {
           criticalChanges['location'] = baseField.location;
@@ -499,7 +579,7 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
                 child: TextFormField(
                   controller: _priceController,
                   decoration:
-                      const InputDecoration(labelText: 'قیمت پایه (فی ساعت)'),
+                      const InputDecoration(labelText: 'قیمت سانس'),
                   keyboardType: TextInputType.number,
                   validator: (v) =>
                       (v == null || v.isEmpty) ? 'لطفا قیمت را وارد کنید' : null,
@@ -586,12 +666,24 @@ class _AddFutsalGroundScreenState extends State<AddFutsalGroundScreen> {
         ),
       ),
       Step(
-        title: const Text('۵. تصاویر و تماس'),
+        title: const Text('۵. اطلاعات تماس و تصاویر'),
         isActive: _currentStep >= 4,
         state: _currentStep > 4 ? StepState.complete : StepState.indexed,
         content: Form(
           key: _formKeys[4],
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            TextFormField(
+                controller: _firstNameController,
+                decoration: const InputDecoration(labelText: 'نام'),
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? 'این فیلد الزامی است' : null),
+            const SizedBox(height: 16),
+            TextFormField(
+                controller: _lastNameController,
+                decoration: const InputDecoration(labelText: 'تخلص'),
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? 'این فیلد الزامی است' : null),
+            const SizedBox(height: 16),
             TextFormField(
                 controller: _phoneController,
                 decoration: const InputDecoration(labelText: 'شماره تماس'),

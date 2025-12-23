@@ -48,9 +48,9 @@ class BookingViewModel extends ChangeNotifier {
       final notification = NotificationModel(
         id: '', 
         userId: groundOwnerId, 
-        title: 'درخواست رزرو جدید',
+        title: 'درخواست رزرو جدید برای ${booking.futsalName}',
         body:
-            '${booking.bookerName} برای ساعت $formattedTime درخواست رزرو ثبت کرده است.',
+            'درخواست رزرو جدید برای زمین ${booking.futsalName} از ${booking.bookerName} برای ساعت $formattedTime',
         type: NotificationType.bookingRequest,
         metadata: {'bookingId': bookingId, 'groundId': booking.groundId},
         createdAt: DateTime.now(),
@@ -71,7 +71,7 @@ class BookingViewModel extends ChangeNotifier {
       final notification = NotificationModel(
         id: '', 
         userId: userId,
-        title: 'رزرو شما تایید شد',
+        title: 'رزرو شما برای $futsalName تایید شد',
         body: 'رزرو شما برای زمین $futsalName در ساعت ${_formatDateTimeToPersian12Hour(startTime)} تایید شد.',
         type: NotificationType.bookingConfirmation,
         metadata: {'bookingId': bookingId, 'groundId': groundId},

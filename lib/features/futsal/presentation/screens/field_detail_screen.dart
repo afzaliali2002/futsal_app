@@ -9,6 +9,7 @@ import 'package:futsal_app/features/booking/presentation/view_models/booking_vie
 import 'package:futsal_app/features/futsal/domain/entities/futsal_field.dart';
 import 'package:futsal_app/features/futsal/domain/entities/time_range.dart';
 import 'package:futsal_app/features/futsal/presentation/providers/futsal_view_model.dart';
+import 'package:futsal_app/features/futsal/presentation/screens/slot_details_screen.dart';
 import 'package:futsal_app/features/profile/data/models/user_role.dart';
 import 'package:futsal_app/features/profile/presentation/view_models/user_view_model.dart';
 import 'package:intl/intl.dart';
@@ -20,8 +21,8 @@ import 'add_futsal_ground_screen.dart';
 
 // ---------------- Persian helpers ----------------
 String _toPersian(String input) {
-  const en = ['0','1','2','3','4','5','6','7','8','9'];
-  const fa = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+  const en = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  const fa = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
   var res = input;
   for (int i = 0; i < en.length; i++) {
     res = res.replaceAll(en[i], fa[i]);
@@ -51,17 +52,35 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
     _selectedDate = DateUtils.dateOnly(DateTime.now());
   }
 
-  // -------- Open map with Lat/Lng --------
+  // -------- Launchers --------
   Future<void> _openMap(double lat, double lng) async {
-    final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    final uri =
+        Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('امکان باز کردن نقشه وجود ندارد')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('امکان باز کردن نقشه وجود ندارد')));
       }
     }
+  }
+
+  Future<void> _launchPhone(String phone) async {
+    final uri = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
+  }
+
+  Future<void> _launchWhatsapp(String phone) async {
+    final uri = Uri.parse('https://wa.me/$phone');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _launchEmail(String email) async {
+    final uri = Uri.parse('mailto:$email');
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
 
   String _cleanAddress(String address, String city) {
@@ -81,7 +100,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
     final futsalVM = context.watch<FutsalViewModel>();
 
     final field = futsalVM.fields.firstWhere(
-          (f) => f.id == widget.field.id,
+      (f) => f.id == widget.field.id,
       orElse: () => widget.field,
     );
 
@@ -93,23 +112,30 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                _buildLocationRatingAndMap(context, field),
-                const SizedBox(height: 24),
-                _sectionTitle(context, 'توضیحات', Icons.info_outline),
-                const SizedBox(height: 12),
-                Text(field.description, style: theme.textTheme.bodyLarge),
-                const SizedBox(height: 24),
-                _sectionTitle(context, 'امکانات', Icons.widgets_outlined),
-                const SizedBox(height: 12),
-                _buildFeatures(field),
-                const SizedBox(height: 24),
-                _sectionTitle(context, 'زمان‌بندی', Icons.access_time_rounded),
-                const SizedBox(height: 12),
-                _buildWeeklyCalendar(),
-                const SizedBox(height: 12),
-                _buildTimeSlots(context, field),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLocationRatingAndMap(context, field),
+                    const SizedBox(height: 24),
+                    _sectionTitle(context, 'توضیحات', Icons.info_outline),
+                    const SizedBox(height: 12),
+                    Text(field.description, style: theme.textTheme.bodyLarge),
+                    const SizedBox(height: 24),
+                    _sectionTitle(context, 'اطلاعات تماس', Icons.contact_phone_outlined),
+                    const SizedBox(height: 12),
+                    _buildContactInfo(context, field),
+                    const SizedBox(height: 24),
+                    _sectionTitle(context, 'امکانات', Icons.widgets_outlined),
+                    const SizedBox(height: 12),
+                    _buildFeatures(field),
+                    const SizedBox(height: 24),
+                    _sectionTitle(
+                        context, 'زمان‌بندی', Icons.access_time_rounded),
+                    const SizedBox(height: 12),
+                    _buildWeeklyCalendar(),
+                    const SizedBox(height: 12),
+                    _buildTimeSlots(context, field),
+                  ]),
             ),
           )
         ],
@@ -136,7 +162,8 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
             icon: const Icon(Icons.edit),
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => AddFutsalGroundScreen(field: field)),
+              MaterialPageRoute(
+                  builder: (_) => AddFutsalGroundScreen(field: field)),
             ),
           ),
         IconButton(
@@ -161,7 +188,8 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
     final userVM = context.read<UserViewModel>();
 
     return Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-      Icon(Icons.location_on_outlined, size: 20, color: theme.colorScheme.primary),
+      Icon(Icons.location_on_outlined,
+          size: 20, color: theme.colorScheme.primary),
       const SizedBox(width: 8),
       Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -188,10 +216,12 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
           if (userVM.user != null) {
             final futsalVM = context.read<FutsalViewModel>();
             final initialRating = await futsalVM.getUserRating(field.id) ?? 3.0;
-            if (context.mounted) _showRatingDialog(context, field, initialRating);
+            if (context.mounted) {
+              _showRatingDialog(context, field, initialRating);
+            }
           } else {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(const SnackBar(content: Text('لطفا برای ثبت امتیاز وارد شوید')));
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text('لطفا برای ثبت امتیاز وارد شوید')));
           }
         },
         borderRadius: BorderRadius.circular(8),
@@ -205,18 +235,20 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
             const Icon(Icons.star, color: Colors.amber, size: 20),
             const SizedBox(width: 5),
             Text(_toPersian(field.rating.toStringAsFixed(1)),
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(width: 4),
             Text('امتیاز دهید',
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: theme.primaryColor, fontWeight: FontWeight.bold)),
+                style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.primaryColor, fontWeight: FontWeight.bold)),
           ]),
         ),
       ),
     ]);
   }
 
-  void _showRatingDialog(BuildContext context, FutsalField field, double initialRating) {
+  void _showRatingDialog(
+      BuildContext context, FutsalField field, double initialRating) {
     double rating = initialRating;
     showDialog(
       context: context,
@@ -232,18 +264,21 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
             allowHalfRating: true,
             itemCount: 5,
             itemPadding: const EdgeInsets.symmetric(horizontal: 4.0),
-            itemBuilder: (context, _) => const Icon(Icons.star, color: Colors.amber),
+            itemBuilder: (context, _) =>
+                const Icon(Icons.star, color: Colors.amber),
             onRatingUpdate: (r) => rating = r,
           ),
         ]),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('انصراف')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('انصراف')),
           TextButton(
             onPressed: () {
               context.read<FutsalViewModel>().rateGround(field.id, rating);
               Navigator.pop(context);
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(const SnackBar(content: Text('امتیاز شما با موفقیت ثبت شد')));
+              ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('امتیاز شما با موفقیت ثبت شد')));
             },
             child: const Text('ثبت'),
           ),
@@ -258,6 +293,50 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
       const SizedBox(width: 8),
       Text(title, style: Theme.of(context).textTheme.headlineSmall),
     ]);
+  }
+
+  // ---------------- Contact Info ----------------
+  Widget _buildContactInfo(BuildContext context, FutsalField field) {
+    final theme = Theme.of(context);
+    final fullName = '${field.firstName ?? ''} ${field.lastName ?? ''}'.trim();
+    final hasWhatsapp = field.whatsappNumber != null && field.whatsappNumber!.isNotEmpty;
+    final hasEmail = field.email != null && field.email!.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (fullName.isNotEmpty)
+          _contactRow(Icons.person_outline, fullName, theme),
+        _contactRow(Icons.phone_outlined, _toPersian(field.phoneNumber), theme,
+            onTap: () => _launchPhone(field.phoneNumber)),
+        if (hasWhatsapp)
+          _contactRow(
+              Icons.message_outlined, _toPersian(field.whatsappNumber!), theme,
+              onTap: () => _launchWhatsapp(field.whatsappNumber!)),
+        if (hasEmail)
+          _contactRow(Icons.email_outlined, field.email!, theme,
+              onTap: () => _launchEmail(field.email!)),
+      ],
+    );
+  }
+
+  Widget _contactRow(IconData icon, String text, ThemeData theme,
+      {VoidCallback? onTap}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 20, color: theme.colorScheme.primary),
+            const SizedBox(width: 12),
+            Flexible(child: Text(text, style: theme.textTheme.bodyLarge)),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildFeatures(FutsalField field) {
@@ -291,16 +370,31 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
               width: 60,
               margin: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
-                color: isSelected ? Theme.of(context).primaryColor : Colors.transparent,
-                border: Border.all(color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade300),
+                color: isSelected
+                    ? Theme.of(context).primaryColor
+                    : Colors.transparent,
+                border: Border.all(
+                    color: isSelected
+                        ? Theme.of(context).primaryColor
+                        : Colors.grey.shade300),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              child:
+                  Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Text(DateFormat.E('fa').format(date),
-                    style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface)),
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isSelected
+                            ? Colors.white
+                            : Theme.of(context).colorScheme.onSurface)),
                 const SizedBox(height: 4),
                 Text(DateFormat.d('fa').format(date),
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface)),
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected
+                            ? Colors.white
+                            : Theme.of(context).colorScheme.onSurface)),
               ]),
             ),
           );
@@ -321,7 +415,8 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
         return StreamBuilder<List<BlockedSlotModel>>(
           stream: bookingVM.getBlockedSlots(field.id, _selectedDate),
           builder: (context, blockedSnap) {
-            if (bookingSnap.connectionState == ConnectionState.waiting || blockedSnap.connectionState == ConnectionState.waiting) {
+            if (bookingSnap.connectionState == ConnectionState.waiting ||
+                blockedSnap.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
 
@@ -342,18 +437,42 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
               itemCount: slots.length,
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, i) {
-                final slot = slots[i];
+                final slotData = slots[i];
+                final slot = slotData['time'] as DateTime;
+                final price = slotData['price'] as double;
+                
                 final booking = bookings.firstWhere(
-                      (b) => !slot.isBefore(b.startTime) && slot.isBefore(b.endTime),
+                  (b) =>
+                      !slot.isBefore(b.startTime) && slot.isBefore(b.endTime),
                   orElse: () => _emptyBooking(slot),
                 );
-                final isConfirmed = booking.id.isNotEmpty && booking.status == BookingStatus.confirmed;
-                final isPending = booking.id.isNotEmpty && booking.status == BookingStatus.pending;
-                final isBlocked = blocked.any((bs) => !slot.isBefore(bs.startTime) && slot.isBefore(bs.endTime));
-                final isMyPending = isPending && booking.userId == currentUserId;
+                
+                final blockedSlotObj = blocked.cast<BlockedSlotModel?>().firstWhere(
+                  (bs) => bs != null && !slot.isBefore(bs.startTime) && slot.isBefore(bs.endTime),
+                  orElse: () => null,
+                );
+
+                final isConfirmed = booking.id.isNotEmpty &&
+                    booking.status == BookingStatus.confirmed;
+                final isPending = booking.id.isNotEmpty &&
+                    booking.status == BookingStatus.pending;
+                final isBlocked = blockedSlotObj != null;
+                final isMyPending =
+                    isPending && booking.userId == currentUserId;
                 final isAvailable = !isConfirmed && !isBlocked && !isMyPending;
 
-                return _slotCard(context, field, slot, isAvailable, isConfirmed, isMyPending, isBlocked, booking, isOwner);
+                return _slotCard(
+                    context,
+                    field,
+                    slot,
+                    price,
+                    isAvailable,
+                    isConfirmed,
+                    isMyPending,
+                    isBlocked,
+                    booking,
+                    blockedSlotObj,
+                    isOwner);
               },
             );
           },
@@ -362,145 +481,170 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
     );
   }
 
-  Widget _slotCard(BuildContext context, FutsalField field, DateTime slot, bool isAvailable, bool isConfirmed, bool isMyPending, bool isBlocked, BookingModel booking, bool isOwner) {
+  Widget _slotCard(
+      BuildContext context,
+      FutsalField field,
+      DateTime slot,
+      double price,
+      bool isAvailable,
+      bool isConfirmed,
+      bool isMyPending,
+      bool isBlocked,
+      BookingModel booking,
+      BlockedSlotModel? blockedSlot,
+      bool isOwner) {
     final theme = Theme.of(context);
     String status;
     Color color;
     Widget? action;
 
     if (isMyPending) {
-      status = 'در انتظار تایید'; color = Colors.amber.shade800; action = null;
+      status = 'در انتظار تایید';
+      color = Colors.amber.shade800;
+      action = null;
     } else if (isConfirmed) {
-      status = 'رزرو شده'; color = Colors.red.shade700; action = null;
+      status = 'رزرو شده';
+      color = Colors.red.shade700;
+      action = null;
     } else if (isBlocked) {
-      status = 'مسدود شده'; color = Colors.orange.shade700; action = null;
+      status = 'مسدود شده';
+      color = Colors.orange.shade700;
+      action = null;
     } else {
-      status = 'قابل دسترس'; color = Colors.green.shade700;
-      action = ElevatedButton(onPressed: () => _confirmBooking(context, field, slot), child: const Text('رزرو'));
+      status = 'قابل دسترس';
+      color = Colors.green.shade700;
+      action = ElevatedButton(
+          onPressed: () => _confirmBooking(context, field, slot, price),
+          child: const Text('رزرو'));
     }
 
     return Material(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: () {
-          if (isAvailable) _confirmBooking(context, field, slot);
-          if (isConfirmed && isOwner) _detailsDialog(context, booking, field);
+        onTap: () async {
+          if (isOwner) {
+             await Navigator.push(context, MaterialPageRoute(builder: (context) => SlotDetailsScreen(
+               slot: slot,
+               field: field,
+               price: price,
+               booking: (isConfirmed || isMyPending) ? booking : null,
+               blockedSlot: blockedSlot,
+             )));
+          } else {
+             if (isAvailable) _confirmBooking(context, field, slot, price);
+          }
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          child:
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('${_formatTime12(slot)} - ${_formatTime12(slot.add(const Duration(minutes: 90)))}',
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                  '${_formatTime12(slot)} - ${_formatTime12(slot.add(const Duration(minutes: 90)))}',
+                  style: theme.textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
-              Text(isConfirmed ? 'رزرو شده توسط: ${booking.bookerName}' : status,
-                  style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+              if (isConfirmed)
+                Text('رزرو شده توسط: ${booking.bookerName}',
+                    style:
+                        TextStyle(color: color, fontWeight: FontWeight.bold))
+              else
+                Text(status,
+                    style:
+                        TextStyle(color: color, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text('قیمت: ${_toPersian(price.toStringAsFixed(0))} ؋',
+                  style: theme.textTheme.bodySmall),
             ]),
-            if (action != null) action!,
+            if (action != null) action,
           ]),
         ),
       ),
     );
   }
 
-  void _confirmBooking(BuildContext context, FutsalField field, DateTime slot) {
+  void _confirmBooking(
+      BuildContext context, FutsalField field, DateTime slot, double price) {
     final bookingVM = context.read<BookingViewModel>();
     final userVM = context.read<UserViewModel>();
     showDialog(
       context: context,
-      builder: (_) => _BookingConfirmationDialog(field: field, slot: slot, bookingViewModel: bookingVM, userViewModel: userVM),
+      builder: (_) => _BookingConfirmationDialog(
+        field: field,
+        slot: slot,
+        price: price,
+        bookingViewModel: bookingVM,
+        userViewModel: userVM,
+      ),
     );
   }
 
-  void _detailsDialog(BuildContext context, BookingModel booking, FutsalField field) {
-    showDialog(context: context, builder: (_) => _BookingDetailsDialog(booking: booking, field: field));
-  }
-
-  List<DateTime> _generateSlots(FutsalField field, DateTime date) {
+  List<Map<String, dynamic>> _generateSlots(FutsalField field, DateTime date) {
     final day = DateFormat.EEEE('en_US').format(date).toLowerCase();
     final schedule = field.schedule?[day];
     if (schedule == null || schedule.isEmpty) return [];
 
-    final slots = <DateTime>[];
+    final slots = <Map<String, dynamic>>[];
     for (final TimeRange tr in schedule) {
-      var cur = DateTime(date.year, date.month, date.day, tr.start.hour, tr.start.minute);
-      final end = DateTime(date.year, date.month, date.day, tr.end.hour, tr.end.minute);
-      final adjustedEnd = end.isBefore(cur) ? end.add(const Duration(days: 1)) : end;
+      var cur = DateTime(
+          date.year, date.month, date.day, tr.start.hour, tr.start.minute);
+      final end = DateTime(
+          date.year, date.month, date.day, tr.end.hour, tr.end.minute);
+      final adjustedEnd =
+          end.isBefore(cur) ? end.add(const Duration(days: 1)) : end;
+      
+      final slotPrice = tr.price ?? field.pricePerHour;
+
       while (cur.isBefore(adjustedEnd)) {
-        slots.add(cur);
+        slots.add({
+          'time': cur,
+          'price': slotPrice,
+        });
         cur = cur.add(const Duration(minutes: 90));
       }
     }
-    slots.sort();
+    slots.sort((a, b) => (a['time'] as DateTime).compareTo(b['time'] as DateTime));
     return slots;
   }
 
   BookingModel _emptyBooking(DateTime slot) => BookingModel(
-    id: '', groundId: '', userId: '', futsalName: '',
-    startTime: slot, endTime: slot, price: 0,
-    status: BookingStatus.cancelled, bookerName: '', bookerPhone: '',
-  );
-}
-
-// ---------------- Booking Details ----------------
-class _BookingDetailsDialog extends StatelessWidget {
-  final BookingModel booking;
-  final FutsalField field;
-  const _BookingDetailsDialog({required this.booking, required this.field});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final bookingVM = context.read<BookingViewModel>();
-    return AlertDialog(
-      title: const Text('جزئیات ساعت'),
-      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('${_formatTime12(booking.startTime)} - ${_formatTime12(booking.endTime)}',
-            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        Text('رزرو شده', style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold)),
-        const Divider(height: 24),
-        Text('رزرو شده توسط: ${booking.bookerName}'),
-        Text('شماره تماس: ${booking.bookerPhone}'),
-        Text('قیمت: ${_toPersian(booking.price.toStringAsFixed(0))} ؋'),
-      ]),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('بستن')),
-        ElevatedButton(
-          onPressed: () async {
-            final uri = Uri.parse('tel:${booking.bookerPhone}');
-            if (await canLaunchUrl(uri)) await launchUrl(uri);
-          },
-          child: const Text('تماس'),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-          onPressed: () async {
-            await bookingVM.rejectBooking(field.id, booking.id, booking.userId, field.name, booking.startTime);
-            if (context.mounted) Navigator.pop(context);
-          },
-          child: const Text('لغو'),
-        ),
-      ],
-    );
-  }
+        id: '',
+        groundId: '',
+        userId: '',
+        futsalName: '',
+        startTime: slot,
+        endTime: slot,
+        price: 0,
+        status: BookingStatus.cancelled,
+        bookerName: '',
+        bookerPhone: '',
+        currency: 'AFN',
+      );
 }
 
 // ---------------- Booking Confirmation ----------------
 class _BookingConfirmationDialog extends StatefulWidget {
   final FutsalField field;
   final DateTime slot;
+  final double price;
   final BookingViewModel bookingViewModel;
   final UserViewModel userViewModel;
-  const _BookingConfirmationDialog({required this.field, required this.slot, required this.bookingViewModel, required this.userViewModel});
+  const _BookingConfirmationDialog(
+      {required this.field,
+      required this.slot,
+      required this.price,
+      required this.bookingViewModel,
+      required this.userViewModel});
 
   @override
-  State<_BookingConfirmationDialog> createState() => _BookingConfirmationDialogState();
+  State<_BookingConfirmationDialog> createState() =>
+      _BookingConfirmationDialogState();
 }
 
-class _BookingConfirmationDialogState extends State<_BookingConfirmationDialog> {
+class _BookingConfirmationDialogState
+    extends State<_BookingConfirmationDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
   late final TextEditingController _phone;
@@ -514,11 +658,14 @@ class _BookingConfirmationDialogState extends State<_BookingConfirmationDialog> 
 
   @override
   void dispose() {
-    _name.dispose(); _phone.dispose(); super.dispose();
+    _name.dispose();
+    _phone.dispose();
+    super.dispose();
   }
 
   String _toShamsi(DateTime d) {
-    final j = Jalali.fromDateTime(d); final f = j.formatter;
+    final j = Jalali.fromDateTime(d);
+    final f = j.formatter;
     return _toPersian('${f.wN}، ${f.d} ${f.mN} ${f.yyyy}');
   }
 
@@ -529,14 +676,22 @@ class _BookingConfirmationDialogState extends State<_BookingConfirmationDialog> 
     if (!phone.startsWith('93')) phone = '93$phone';
 
     final booking = BookingModel(
-      id: '', groundId: widget.field.id, userId: widget.userViewModel.user!.uid,
-      futsalName: widget.field.name, startTime: widget.slot,
-      endTime: widget.slot.add(const Duration(minutes: 90)), price: widget.field.pricePerHour,
-      status: BookingStatus.pending, bookerName: _name.text, bookerPhone: phone,
+      id: '',
+      groundId: widget.field.id,
+      userId: widget.userViewModel.user!.uid,
+      futsalName: widget.field.name,
+      startTime: widget.slot,
+      endTime: widget.slot.add(const Duration(minutes: 90)),
+      price: widget.price,
+      status: BookingStatus.pending,
+      bookerName: _name.text,
+      bookerPhone: phone,
+      currency: 'AFN',
     );
     widget.bookingViewModel.createBooking(booking, widget.field.ownerId);
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('درخواست رزرو ارسال شد')));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('درخواست رزرو ارسال شد')));
   }
 
   @override
@@ -545,21 +700,39 @@ class _BookingConfirmationDialogState extends State<_BookingConfirmationDialog> 
       title: const Text('تایید و تکمیل اطلاعات'),
       content: Form(
         key: _formKey,
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(widget.field.name, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text('تاریخ: ${_toShamsi(widget.slot)}'),
-          Text('ساعت: ${_formatTime12(widget.slot)}'),
-          Text('قیمت: ${_toPersian(widget.field.pricePerHour.toStringAsFixed(0))} ؋'),
-          const Divider(height: 24),
-          TextFormField(controller: _name, decoration: const InputDecoration(labelText: 'نام'), validator: (v)=>v!.isEmpty?'الزامی':null),
-          const SizedBox(height: 12),
-          TextFormField(controller: _phone, decoration: const InputDecoration(labelText: 'شماره تماس', prefixText: '+93 '), keyboardType: TextInputType.phone,
-              validator: (v)=>v==null||v.isEmpty?'الزامی':null),
-        ]),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(widget.field.name,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text('تاریخ: ${_toShamsi(widget.slot)}'),
+              Text('ساعت: ${_formatTime12(widget.slot)}'),
+              Text(
+                  'قیمت: ${_toPersian(widget.price.toStringAsFixed(0))} ؋'),
+              const Divider(height: 24),
+              TextFormField(
+                  controller: _name,
+                  decoration: const InputDecoration(labelText: 'نام'),
+                  validator: (v) => v!.isEmpty ? 'الزامی' : null),
+              const SizedBox(height: 12),
+              TextFormField(
+                  controller: _phone,
+                  decoration: const InputDecoration(
+                      labelText: 'شماره تماس', prefixText: '+93 '),
+                  keyboardType: TextInputType.phone,
+                  validator: (v) =>
+                      v == null || v.isEmpty ? 'الزامی' : null),
+            ]),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('انصراف')),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('انصراف')),
         ElevatedButton(onPressed: _submit, child: const Text('ارسال')),
       ],
     );

@@ -7,15 +7,10 @@ import 'package:futsal_app/features/futsal/domain/entities/futsal_field.dart';
 import 'package:futsal_app/features/futsal/domain/entities/time_range.dart';
 import 'package:futsal_app/features/futsal/presentation/providers/futsal_view_model.dart';
 import 'package:futsal_app/features/futsal/presentation/screens/add_futsal_ground_screen.dart';
-import 'package:futsal_app/features/futsal/presentation/screens/field_detail_screen.dart';
 import 'package:futsal_app/features/futsal/presentation/screens/slot_details_screen.dart';
-import 'package:futsal_app/features/notification/presentation/screens/notification_screen.dart';
 import 'package:futsal_app/features/profile/presentation/view_models/user_view_model.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:badges/badges.dart' as badges;
-
-import '../widgets/futsal_field_card.dart';
 
 // Helper function to convert English numerals and AM/PM to Persian
 String _toPersian(String input) {
@@ -38,6 +33,149 @@ class GroundOwnerDashboardScreen extends StatefulWidget {
 }
 
 class _GroundOwnerDashboardScreenState extends State<GroundOwnerDashboardScreen> {
+  String? _selectedFieldId;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final userViewModel = context.watch<UserViewModel>();
+    final ownerId = userViewModel.user?.uid;
+
+    return Consumer<FutsalViewModel>(
+      builder: (context, vm, child) {
+        final myFields = vm.fields.where((f) => f.ownerId == ownerId).toList();
+
+        FutsalField? selectedField;
+        if (myFields.isNotEmpty) {
+          if (_selectedFieldId != null) {
+            try {
+              selectedField = myFields.firstWhere((f) => f.id == _selectedFieldId);
+            } catch (_) {
+              selectedField = myFields.first;
+              _selectedFieldId = selectedField.id;
+            }
+          } else {
+            selectedField = myFields.first;
+            _selectedFieldId = selectedField.id;
+          }
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('پنل مدیریت'),
+            centerTitle: true,
+            elevation: 0,
+            backgroundColor: theme.scaffoldBackgroundColor,
+            foregroundColor: theme.colorScheme.onSurface,
+          ),
+          body: myFields.isEmpty
+              ? _buildEmptyState(context, vm)
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildGroundSelector(myFields, selectedField, theme),
+                      const SizedBox(height: 16),
+                      if (selectedField != null)
+                         _buildGroundImage(selectedField),
+                      const SizedBox(height: 16),
+                      if (selectedField != null)
+                        GroundManagementScreen(field: selectedField),
+                    ],
+                  ),
+                ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AddFutsalGroundScreen()),
+              );
+            },
+            label: const Text('افزودن زمین جدید'),
+            icon: const Icon(Icons.add),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGroundSelector(List<FutsalField> myFields, FutsalField? selectedField, ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: selectedField?.id,
+          isExpanded: true,
+          hint: const Text('انتخاب زمین'),
+          items: myFields.map((field) {
+            return DropdownMenuItem<String>(
+              value: field.id,
+              child: Text(field.name, style: theme.textTheme.titleMedium),
+            );
+          }).toList(),
+          onChanged: (fieldId) {
+            if (fieldId != null) {
+              setState(() {
+                _selectedFieldId = fieldId;
+              });
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGroundImage(FutsalField field) {
+    return Container(
+      height: 200,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: Colors.grey.shade200,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: field.coverImageUrl.isNotEmpty 
+          ? Image.network(
+              field.coverImageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey)),
+            )
+          : const Center(child: Icon(Icons.sports_soccer, size: 80, color: Colors.grey)),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, FutsalViewModel vm) {
+    if (vm.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.sports_soccer, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text('شما هنوز زمینی ثبت نکرده‌اید'),
+        ],
+      ),
+    );
+  }
+}
+
+class GroundManagementScreen extends StatefulWidget {
+  final FutsalField field;
+
+  const GroundManagementScreen({super.key, required this.field});
+
+  @override
+  State<GroundManagementScreen> createState() => _GroundManagementScreenState();
+}
+
+class _GroundManagementScreenState extends State<GroundManagementScreen> {
   late DateTime _selectedDate;
 
   @override
@@ -55,67 +193,18 @@ class _GroundOwnerDashboardScreenState extends State<GroundOwnerDashboardScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final userViewModel = context.watch<UserViewModel>();
-    final ownerId = userViewModel.user?.uid;
 
-    return Consumer<FutsalViewModel>(
-      builder: (context, vm, child) {
-        final myFields = vm.fields.where((f) => f.ownerId == ownerId).toList();
-        final hasGround = myFields.isNotEmpty;
-
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('پنل مدیریت'),
-            centerTitle: true,
-            elevation: 0,
-            backgroundColor: theme.scaffoldBackgroundColor,
-            foregroundColor: theme.colorScheme.onSurface,
-            actions: [
-              // IconButton(
-              //   icon: const badges.Badge(
-              //     badgeContent: Text('3'), // Replace with actual notification count
-              //     child: Icon(Icons.notifications_outlined),
-              //   ),
-              //   onPressed: () {
-              //     Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationScreen()));
-              //   },
-              // ),
-            ],
-          ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildSummaryCard(context, theme, hasGround ? myFields.first : null),
-                const SizedBox(height: 24),
-                Text(
-                  'زمین من',
-                  style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                _buildMyGroundsList(context, vm, myFields, ownerId),
-                if (hasGround) _buildTimeSlotManager(context, myFields.first),
-              ],
-            ),
-          ),
-          floatingActionButton: !hasGround
-              ? FloatingActionButton.extended(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const AddFutsalGroundScreen()),
-                    );
-                  },
-                  label: const Text('افزودن زمین جدید'),
-                  icon: const Icon(Icons.add),
-                )
-              : null,
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildSummaryCard(context, theme, widget.field),
+        const SizedBox(height: 24),
+        _buildTimeSlotManager(context, widget.field),
+      ],
     );
   }
 
-  Widget _buildSummaryCard(BuildContext context, ThemeData theme, FutsalField? field) {
+  Widget _buildSummaryCard(BuildContext context, ThemeData theme, FutsalField field) {
     final bookingViewModel = context.watch<BookingViewModel>();
     return Card(
       elevation: 2,
@@ -123,14 +212,20 @@ class _GroundOwnerDashboardScreenState extends State<GroundOwnerDashboardScreen>
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: StreamBuilder<List<BookingModel>>(
-            stream: field != null ? bookingViewModel.getBookings(field.id, DateTime.now()) : Stream.value([]),
+            stream: bookingViewModel.getBookings(field.id, DateTime.now()),
             builder: (context, snapshot) {
-              final approvedBookings = snapshot.data?.where((b) => b.status == BookingStatus.approved).toList() ?? [];
-              final todayIncome = approvedBookings.fold<double>(0, (sum, booking) => sum + booking.price);
+              // FIX: Only count bookings that are confirmed or completed
+              final confirmedBookings = snapshot.data?.where((b) => 
+                b.status == BookingStatus.confirmed || 
+                b.status == BookingStatus.completed
+              ).toList() ?? [];
+              
+              final todayIncome = confirmedBookings.fold<double>(0, (sum, booking) => sum + booking.price);
+
               return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStatItem(context, 'رزروهای امروز', _toPersian(approvedBookings.length.toString()), Icons.today),
+                  _buildStatItem(context, 'رزروهای امروز', _toPersian(confirmedBookings.length.toString()), Icons.today),
                   _buildStatItem(context, 'درآمد امروز', '${_toPersian(todayIncome.toStringAsFixed(0))} ؋', Icons.attach_money),
                 ],
               );
@@ -148,38 +243,6 @@ class _GroundOwnerDashboardScreenState extends State<GroundOwnerDashboardScreen>
         Text(value, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
         Text(label, style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
       ],
-    );
-  }
-
-  Widget _buildMyGroundsList(
-      BuildContext context, FutsalViewModel vm, List<FutsalField> myFields, String? ownerId) {
-    if (ownerId == null) return const Center(child: Text('کاربر یافت نشد'));
-
-    if (vm.isLoading && myFields.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (myFields.isEmpty) {
-      return Center(
-        child: Column(
-          children: [
-            const Icon(Icons.sports_soccer, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            const Text('شما هنوز زمینی ثبت نکرده‌اید'),
-          ],
-        ),
-      );
-    }
-
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => FieldDetailScreen(field: myFields.first),
-          ),
-        );
-      },
-      child: FutsalFieldCard(field: myFields.first),
     );
   }
 
@@ -273,7 +336,6 @@ class _GroundOwnerDashboardScreenState extends State<GroundOwnerDashboardScreen>
               return const Center(child: Padding(padding: EdgeInsets.all(32.0), child: CircularProgressIndicator()));
             }
 
-            // Filter out cancelled bookings to prevent them from showing as "Reserved" in details
             final bookings = (bookingSnapshot.data ?? [])
                 .where((b) => b.status != BookingStatus.cancelled)
                 .toList();
@@ -293,7 +355,7 @@ class _GroundOwnerDashboardScreenState extends State<GroundOwnerDashboardScreen>
               separatorBuilder: (_, __) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final slot = timeSlots[index];
-                final booking = bookings.firstWhere((b) => !slot.isBefore(b.startTime) && slot.isBefore(b.endTime), orElse: () => BookingModel(id: '', groundId: '', userId: '', futsalName: '', startTime: slot, endTime: slot.add(const Duration(minutes: 90)), price: 0, status: BookingStatus.cancelled, bookerName: '', bookerPhone: ''));
+                final booking = bookings.firstWhere((b) => !slot.isBefore(b.startTime) && slot.isBefore(b.endTime), orElse: () => BookingModel(id: '', groundId: '', userId: '', futsalName: '', startTime: slot, endTime: slot.add(const Duration(minutes: 90)), price: 0, status: BookingStatus.cancelled, bookerName: '', bookerPhone: '', currency: 'AFN'));
                 final blockedSlot = blockedSlots.firstWhere((bs) => !slot.isBefore(bs.startTime) && slot.isBefore(bs.endTime), orElse: () => BlockedSlotModel(id: '', groundId: '', startTime: slot, endTime: slot.add(const Duration(minutes: 90))));
 
                 final isConfirmed = booking.id.isNotEmpty && (
@@ -388,7 +450,6 @@ class _EditScheduleScreenState extends State<_EditScheduleScreen> {
   @override
   void initState() {
     super.initState();
-    // Deep copy the schedule to avoid modifying the original object
     _schedule = Map.from(widget.field.schedule?.map(
       (key, value) => MapEntry(key, value.map((e) => TimeRange(start: e.start, end: e.end)).toList()),
     ) ?? {});

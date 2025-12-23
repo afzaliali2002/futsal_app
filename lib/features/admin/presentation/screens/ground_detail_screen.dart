@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:futsal_app/features/admin/presentation/view_models/admin_view_model.dart';
 import 'package:futsal_app/features/futsal/presentation/screens/add_futsal_ground_screen.dart';
 import 'package:futsal_app/features/futsal/domain/entities/futsal_field.dart';
-import 'package:futsal_app/features/futsal/presentation/providers/futsal_view_model.dart';
 import 'package:futsal_app/features/profile/data/models/user_role.dart';
 import 'package:futsal_app/features/profile/presentation/view_models/user_view_model.dart';
 import 'package:provider/provider.dart';
@@ -14,31 +14,42 @@ class GroundDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final vm = context.watch<FutsalViewModel>();
+    final vm = context.watch<AdminViewModel>();
+    
+    // Fix: Get the latest ground data from the ViewModel to ensure UI updates after actions
+    final currentGround = vm.grounds.firstWhere(
+      (g) => g.id == ground.id, 
+      orElse: () => ground
+    );
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
-          _buildSliverAppBar(context, ground, vm),
+          _buildSliverAppBar(context, currentGround, vm),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildLocationAndRating(context, ground),
+                  _buildLocationAndRating(context, currentGround),
                   const SizedBox(height: 24),
-                  if (ground.features.isNotEmpty) ...[
+                  // New Status & Approval Section
+                  _buildAdminStatusCard(context, currentGround, vm),
+                  const SizedBox(height: 24),
+                  if (currentGround.features.isNotEmpty) ...[
                     _buildSectionTitle(context, 'امکانات', Icons.widgets_outlined),
                     const SizedBox(height: 16),
-                    _buildFeaturesGrid(context, ground.features),
+                    _buildFeaturesGrid(context, currentGround.features),
                     const SizedBox(height: 24),
                   ],
                   _buildSectionTitle(context, 'توضیحات', Icons.info_outline),
                   const SizedBox(height: 16),
                   Text(
-                    'این یک توضیح نمونه برای زمین فوتسال است که جزئیات بیشتری در مورد امکانات و  شرایط آن ارائه می‌دهد. این زمین دارای بهترین کیفیت چمن مصنوعی و نورپردازی حرفه‌ای است.',
+                    currentGround.description.isNotEmpty 
+                        ? currentGround.description 
+                        : 'توضیحاتی برای این زمین ثبت نشده است.',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       height: 1.7,
                       color: theme.colorScheme.onSurface.withAlpha(179),
@@ -47,21 +58,64 @@ class GroundDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   _buildSectionTitle(
-                      context, 'زمان‌های آزاد', Icons.access_time_rounded),
+                      context, 'زمان‌های کاری', Icons.access_time_rounded),
                   const SizedBox(height: 16),
-                  _buildTimeSlots(context),
+                  _buildScheduleInfo(context, currentGround),
                 ],
               ),
             ),
           ),
         ],
       ),
-      bottomNavigationBar: _buildBookingBottomBar(context, ground),
+      bottomNavigationBar: _buildAdminActionsBar(context, currentGround, vm),
+    );
+  }
+  
+  Widget _buildAdminStatusCard(BuildContext context, FutsalField ground, AdminViewModel vm) {
+    Color color = Colors.grey;
+    IconData icon = Icons.help_outline;
+    String text = 'نامشخص';
+    
+    switch (ground.status) {
+      case 'approved':
+        color = Colors.green;
+        icon = Icons.check_circle;
+        text = 'تایید شده';
+        break;
+      case 'pending':
+        color = Colors.orange;
+        icon = Icons.hourglass_empty;
+        text = 'در انتظار تایید';
+        break;
+      case 'rejected':
+        color = Colors.red;
+        icon = Icons.cancel;
+        text = 'رد شده';
+        break;
+    }
+    
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        border: Border.all(color: color),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: 12),
+          Text(text, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
+          const Spacer(),
+          if (ground.status == 'pending')
+             const Text('لطفا بررسی کنید', style: TextStyle(color: Colors.grey)),
+        ],
+      ),
     );
   }
 
   SliverAppBar _buildSliverAppBar(
-      BuildContext context, FutsalField ground, FutsalViewModel vm) {
+      BuildContext context, FutsalField ground, AdminViewModel vm) {
     final userViewModel = context.watch<UserViewModel>();
     final isOwner = userViewModel.user?.uid == ground.ownerId;
     final isAdmin = userViewModel.user?.role == UserRole.admin;
@@ -108,21 +162,12 @@ class GroundDetailScreen extends StatelessWidget {
               );
 
               if (confirmed == true) {
-                await vm.deleteGround(ground.id);
+                await vm.deleteGround(ground.id, context.read<UserViewModel>());
                 if (context.mounted) Navigator.of(context).pop();
               }
             },
           ),
         ],
-        IconButton(
-          icon: Icon(
-            ground.isFavorite ? Icons.favorite : Icons.favorite_border,
-            color: Colors.white,
-          ),
-          onPressed: () {
-            vm.toggleFavorite(ground);
-          },
-        ),
       ],
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: true,
@@ -229,50 +274,23 @@ class GroundDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTimeSlots(BuildContext context) {
-    final theme = Theme.of(context);
-    final List<String> times = [
-      '09:00',
-      '11:00',
-      '14:00',
-      '16:00',
-      '18:00',
-      '20:00'
-    ];
-
-    return SizedBox(
-      height: 45,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: times.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          bool isSelected = index == 1;
-
-          return ActionChip(
-            label: Text(times[index]),
-            onPressed: () {},
-            labelStyle: theme.textTheme.titleMedium?.copyWith(
-              color: isSelected
-                  ? theme.colorScheme.onPrimary
-                  : theme.colorScheme.primary,
-              fontWeight: FontWeight.bold,
-            ),
-            backgroundColor: isSelected
-                ? theme.colorScheme.primary
-                : theme.colorScheme.primaryContainer.withAlpha(77),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            side: BorderSide.none,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-          );
-        },
-      ),
-    );
+  Widget _buildScheduleInfo(BuildContext context, FutsalField ground) {
+    // Show real schedule if available
+    if (ground.schedule != null && ground.schedule!.isNotEmpty) {
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: ground.schedule!.keys.map((day) => Chip(label: Text(day))).toList(),
+      );
+    }
+    return const Text('برنامه کاری مشخص نشده است');
   }
 
-  Widget _buildBookingBottomBar(BuildContext context, FutsalField ground) {
+  Widget _buildAdminActionsBar(BuildContext context, FutsalField ground, AdminViewModel vm) {
     final theme = Theme.of(context);
+    
+    // Only show approval buttons if pending
+    if (ground.status != 'pending') return const SizedBox.shrink();
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15)
@@ -289,42 +307,31 @@ class GroundDetailScreen extends StatelessWidget {
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'قیمت برای ۱.۵ ساعت',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withAlpha(153),
-                ),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => vm.rejectGround(ground.id, context.read<UserViewModel>()),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              const SizedBox(height: 2),
-              Text(
-                '${ground.pricePerHour.toStringAsFixed(0)} افغانی',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            ],
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/booking', arguments: ground);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.primaryColor,
-              foregroundColor: theme.colorScheme.onPrimary,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+              child: const Text('رد کردن', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
-            child: const Text('رزرو الان',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => vm.approveGround(ground.id, context.read<UserViewModel>()),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('تایید کردن', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
           ),
         ],
       ),

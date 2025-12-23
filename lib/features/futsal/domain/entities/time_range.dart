@@ -30,4 +30,16 @@ class TimeRange {
       'price': price,
     };
   }
+
+  TimeRange copyWith({
+    TimeOfDay? start,
+    TimeOfDay? end,
+    double? price,
+  }) {
+    return TimeRange(
+      start: start ?? this.start,
+      end: end ?? this.end,
+      price: price ?? this.price,
+    );
+  }
 }

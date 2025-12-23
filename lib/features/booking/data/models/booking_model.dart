@@ -12,6 +12,7 @@ class BookingModel {
   final BookingStatus status;
   final String bookerName;
   final String bookerPhone;
+  final String currency;
 
   BookingModel({
     required this.id,
@@ -24,6 +25,7 @@ class BookingModel {
     required this.status,
     required this.bookerName,
     required this.bookerPhone,
+    required this.currency,
   });
 
   factory BookingModel.fromSnapshot(DocumentSnapshot doc) {
@@ -39,6 +41,7 @@ class BookingModel {
       status: BookingStatus.values.firstWhere((e) => e.toString() == 'BookingStatus.${data['status']}', orElse: () => BookingStatus.upcoming),
       bookerName: data['bookerName'] ?? '',
       bookerPhone: data['bookerPhone'] ?? '',
+      currency: data['currency'] ?? 'AFN', // Default to AFN if not provided
     );
   }
 
@@ -53,6 +56,7 @@ class BookingModel {
       'status': status.toString().split('.').last,
       'bookerName': bookerName,
       'bookerPhone': bookerPhone,
+      'currency': currency,
     };
   }
 }

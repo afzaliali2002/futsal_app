@@ -109,6 +109,9 @@ class UserDetailScreen extends StatelessWidget {
   }
 
   Widget _buildAdminActions(BuildContext context, AdminViewModel adminViewModel) {
+    // Get currentUser ViewModel to pass to adminViewModel methods
+    final currentUserViewModel = Provider.of<UserViewModel>(context, listen: false);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -123,7 +126,7 @@ class UserDetailScreen extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         ElevatedButton.icon(
-          onPressed: () => _showBlockUserDialog(context, adminViewModel),
+          onPressed: () => _showBlockUserDialog(context, adminViewModel, currentUserViewModel),
           icon: const Icon(Icons.block),
           label: const Text('مسدود کردن کاربر'),
           style: ElevatedButton.styleFrom(
@@ -140,7 +143,7 @@ class UserDetailScreen extends StatelessWidget {
               'آیا از حذف این کاربر اطمینان دارید؟ این عمل قابل بازگشت نیست.',
             );
             if (confirm == true) {
-              adminViewModel.deleteUser(user.uid);
+              adminViewModel.deleteUser(user.uid, currentUserViewModel);
               Navigator.of(context).pop();
             }
           },
@@ -200,7 +203,7 @@ class UserDetailScreen extends StatelessWidget {
     );
   }
 
-  void _showBlockUserDialog(BuildContext context, AdminViewModel adminViewModel) {
+  void _showBlockUserDialog(BuildContext context, AdminViewModel adminViewModel, UserViewModel currentUserViewModel) {
     showDialog(
       context: context,
       builder: (context) {
@@ -210,21 +213,21 @@ class UserDetailScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () {
-                adminViewModel.blockUser(user.uid, DateTime.now().add(const Duration(days: 7)));
+                adminViewModel.blockUser(user.uid, DateTime.now().add(const Duration(days: 7)), currentUserViewModel);
                 Navigator.of(context).pop();
               },
               child: const Text('یک هفته'),
             ),
             TextButton(
               onPressed: () {
-                adminViewModel.blockUser(user.uid, DateTime.now().add(const Duration(days: 30)));
+                adminViewModel.blockUser(user.uid, DateTime.now().add(const Duration(days: 30)), currentUserViewModel);
                 Navigator.of(context).pop();
               },
               child: const Text('یک ماه'),
             ),
             TextButton(
               onPressed: () {
-                adminViewModel.blockUser(user.uid, null); // Indefinite
+                adminViewModel.blockUser(user.uid, null, currentUserViewModel); // Indefinite
                 Navigator.of(context).pop();
               },
               child: const Text('نامحدود'),

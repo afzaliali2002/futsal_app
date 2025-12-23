@@ -28,9 +28,12 @@ class FutsalField {
   final String coverImageUrl;
   final List<String> galleryImageUrls;
 
+  // Contact info
   final String phoneNumber;
   final String? whatsappNumber;
   final String? email;
+  final String? firstName;
+  final String? lastName;
 
   final String ownerId;
   final double rating;
@@ -65,6 +68,8 @@ class FutsalField {
     required this.phoneNumber,
     this.whatsappNumber,
     this.email,
+    this.firstName,
+    this.lastName,
     required this.ownerId,
     this.rating = 0.0,
     this.isFavorite = false,
@@ -111,6 +116,8 @@ class FutsalField {
     String? phoneNumber,
     String? whatsappNumber,
     String? email,
+    String? firstName,
+    String? lastName,
     String? ownerId,
     double? rating,
     bool? isFavorite,
@@ -143,6 +150,8 @@ class FutsalField {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       whatsappNumber: whatsappNumber ?? this.whatsappNumber,
       email: email ?? this.email,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
       ownerId: ownerId ?? this.ownerId,
       rating: rating ?? this.rating,
       isFavorite: isFavorite ?? this.isFavorite,
