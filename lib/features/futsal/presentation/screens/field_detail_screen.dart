@@ -34,6 +34,10 @@ String _formatTime12(DateTime dt) {
   return _toPersian(DateFormat('h:mm a', 'en_US').format(dt));
 }
 
+String _formatTime24(DateTime dt) {
+  return _toPersian(DateFormat('H:mm', 'en_US').format(dt));
+}
+
 // ---------------- Screen ----------------
 class FieldDetailScreen extends StatefulWidget {
   final FutsalField field;
@@ -119,7 +123,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
                     const SizedBox(height: 24),
                     _sectionTitle(context, 'توضیحات', Icons.info_outline),
                     const SizedBox(height: 12),
-                    Text(field.description, style: theme.textTheme.bodyLarge),
+                    Text(field.description, style: theme.textTheme.bodyMedium), // Reduced font
                     const SizedBox(height: 24),
                     _sectionTitle(context, 'اطلاعات تماس', Icons.contact_phone_outlined),
                     const SizedBox(height: 12),
@@ -127,14 +131,14 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
                     const SizedBox(height: 24),
                     _sectionTitle(context, 'امکانات', Icons.widgets_outlined),
                     const SizedBox(height: 12),
-                    _buildFeatures(field),
+                    _buildFeaturesGrid(field), // Changed to Grid
                     const SizedBox(height: 24),
                     _sectionTitle(
                         context, 'زمان‌بندی', Icons.access_time_rounded),
                     const SizedBox(height: 12),
                     _buildWeeklyCalendar(),
-                    const SizedBox(height: 12),
-                    _buildTimeSlots(context, field),
+                    const SizedBox(height: 16),
+                    _buildTimeSlotsList(context, field), // Changed to List
                   ]),
             ),
           )
@@ -152,7 +156,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
     final canEdit = isOwner || isAdmin;
 
     return SliverAppBar(
-      expandedHeight: 260,
+      expandedHeight: 240, // Reduced height slightly
       pinned: true,
       backgroundColor: Theme.of(context).primaryColor,
       foregroundColor: Colors.white,
@@ -172,7 +176,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
         )
       ],
       flexibleSpace: FlexibleSpaceBar(
-        title: Text(field.name),
+        title: Text(field.name, style: const TextStyle(fontSize: 16)), // Smaller font
         background: Image.network(
           field.coverImageUrl,
           fit: BoxFit.cover,
@@ -189,22 +193,22 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
 
     return Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
       Icon(Icons.location_on_outlined,
-          size: 20, color: theme.colorScheme.primary),
+          size: 18, color: theme.colorScheme.primary),
       const SizedBox(width: 8),
       Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(_cleanAddress(field.address, field.city),
-              style: theme.textTheme.titleMedium,
+              style: theme.textTheme.titleSmall, // Smaller font
               maxLines: 1,
               overflow: TextOverflow.ellipsis),
           const SizedBox(height: 4),
           InkWell(
             onTap: () => _openMap(field.latitude, field.longitude),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.map_outlined, size: 18, color: theme.primaryColor),
+              Icon(Icons.map_outlined, size: 16, color: theme.primaryColor),
               const SizedBox(width: 4),
               Text('یافتن در نقشه',
-                  style: theme.textTheme.labelMedium?.copyWith(
+                  style: theme.textTheme.labelSmall?.copyWith( // Smaller font
                       color: theme.primaryColor, fontWeight: FontWeight.bold)),
             ]),
           ),
@@ -226,16 +230,16 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
         },
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          padding: const EdgeInsets.all(4),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: theme.colorScheme.secondaryContainer.withOpacity(0.5),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(children: [
-            const Icon(Icons.star, color: Colors.amber, size: 20),
+            const Icon(Icons.star, color: Colors.amber, size: 16),
             const SizedBox(width: 5),
             Text(_toPersian(field.rating.toStringAsFixed(1)),
-                style: theme.textTheme.titleMedium
+                style: theme.textTheme.titleSmall
                     ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(width: 4),
             Text('امتیاز دهید',
@@ -289,9 +293,9 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
 
   Widget _sectionTitle(BuildContext context, String title, IconData icon) {
     return Row(children: [
-      Icon(icon, color: Theme.of(context).colorScheme.primary),
+      Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
       const SizedBox(width: 8),
-      Text(title, style: Theme.of(context).textTheme.headlineSmall),
+      Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)), // Smaller font
     ]);
   }
 
@@ -323,41 +327,69 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
   Widget _contactRow(IconData icon, String text, ThemeData theme,
       {VoidCallback? onTap}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(4),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 20, color: theme.colorScheme.primary),
+            Icon(icon, size: 18, color: theme.colorScheme.primary),
             const SizedBox(width: 12),
-            Flexible(child: Text(text, style: theme.textTheme.bodyLarge)),
+            Flexible(child: Text(text, style: theme.textTheme.bodyMedium)), // Smaller font
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFeatures(FutsalField field) {
+  // ---------------- Features Grid ----------------
+  Widget _buildFeaturesGrid(FutsalField field) {
     final chips = <Widget>[];
-    if (field.lightsAvailable) chips.add(_chip('چراغ'));
-    if (field.parkingAvailable) chips.add(_chip('پارکینگ'));
-    if (field.changingRoomAvailable) chips.add(_chip('رختکن'));
-    if (field.washroomAvailable) chips.add(_chip('تشناب'));
-    if (field.grassType != null) chips.add(_chip('چمن ${field.grassType!}'));
-    if (field.size != null) chips.add(_chip(field.size!));
+    if (field.lightsAvailable) chips.add(_featureItem('چراغ', Icons.lightbulb_outline));
+    if (field.parkingAvailable) chips.add(_featureItem('پارکینگ', Icons.local_parking));
+    if (field.changingRoomAvailable) chips.add(_featureItem('رختکن', Icons.checkroom));
+    if (field.washroomAvailable) chips.add(_featureItem('تشناب', Icons.wash));
+    if (field.grassType != null) chips.add(_featureItem('چمن ${field.grassType!}', Icons.grass));
+    if (field.size != null) chips.add(_featureItem(field.size!, Icons.aspect_ratio));
+    
     if (chips.isEmpty) return const Text('امکانات خاصی ثبت نشده است.');
-    return Wrap(spacing: 10, runSpacing: 10, children: chips);
+    
+    // Using GridView for features
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 3,
+      crossAxisSpacing: 8,
+      mainAxisSpacing: 8,
+      childAspectRatio: 2.5,
+      children: chips,
+    );
   }
 
-  Widget _chip(String label) => Chip(label: Text(label));
+  Widget _featureItem(String label, IconData icon) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 14, color: Colors.grey[700]),
+          const SizedBox(width: 4),
+          Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
 
   // ---------------- Calendar & Slots ----------------
   Widget _buildWeeklyCalendar() {
     final today = DateUtils.dateOnly(DateTime.now());
     return SizedBox(
-      height: 80,
+      height: 70, // Slightly reduced height
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: 7,
@@ -367,7 +399,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
           return GestureDetector(
             onTap: () => setState(() => _selectedDate = date),
             child: Container(
-              width: 60,
+              width: 55, // Slightly reduced width
               margin: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
                 color: isSelected
@@ -383,6 +415,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
                   Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Text(DateFormat.E('fa').format(date),
                     style: TextStyle(
+                        fontSize: 12, // Smaller font
                         fontWeight: FontWeight.bold,
                         color: isSelected
                             ? Colors.white
@@ -390,7 +423,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
                 const SizedBox(height: 4),
                 Text(DateFormat.d('fa').format(date),
                     style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 14, // Smaller font
                         fontWeight: FontWeight.bold,
                         color: isSelected
                             ? Colors.white
@@ -403,7 +436,8 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
     );
   }
 
-  Widget _buildTimeSlots(BuildContext context, FutsalField field) {
+  // Use List for Time Slots
+  Widget _buildTimeSlotsList(BuildContext context, FutsalField field) {
     final bookingVM = context.watch<BookingViewModel>();
     final userVM = context.read<UserViewModel>();
     final currentUserId = userVM.user?.uid;
@@ -435,7 +469,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: slots.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              separatorBuilder: (context, index) => const SizedBox(height: 10),
               itemBuilder: (context, i) {
                 final slotData = slots[i];
                 final slot = slotData['time'] as DateTime;
@@ -461,7 +495,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
                     isPending && booking.userId == currentUserId;
                 final isAvailable = !isConfirmed && !isBlocked && !isMyPending;
 
-                return _slotCard(
+                return _slotListItem(
                     context,
                     field,
                     slot,
@@ -481,7 +515,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
     );
   }
 
-  Widget _slotCard(
+  Widget _slotListItem(
       BuildContext context,
       FutsalField field,
       DateTime slot,
@@ -494,33 +528,34 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
       BlockedSlotModel? blockedSlot,
       bool isOwner) {
     final theme = Theme.of(context);
-    String status;
-    Color color;
-    Widget? action;
+    String statusLabel;
+    Color bgColor;
+    Color textColor;
 
     if (isMyPending) {
-      status = 'در انتظار تایید';
-      color = Colors.amber.shade800;
-      action = null;
+      statusLabel = 'در انتظار';
+      bgColor = Colors.amber.shade100;
+      textColor = Colors.amber.shade900;
     } else if (isConfirmed) {
-      status = 'رزرو شده';
-      color = Colors.red.shade700;
-      action = null;
+      statusLabel = 'رزرو';
+      bgColor = Colors.red.shade100;
+      textColor = Colors.red.shade900;
     } else if (isBlocked) {
-      status = 'مسدود شده';
-      color = Colors.orange.shade700;
-      action = null;
+      statusLabel = 'مسدود';
+      bgColor = Colors.grey.shade300;
+      textColor = Colors.grey.shade700;
     } else {
-      status = 'قابل دسترس';
-      color = Colors.green.shade700;
-      action = ElevatedButton(
-          onPressed: () => _confirmBooking(context, field, slot, price),
-          child: const Text('رزرو'));
+      statusLabel = 'آزاد';
+      bgColor = Colors.green.shade50;
+      textColor = Colors.green.shade800;
     }
 
+    final endTime = slot.add(const Duration(minutes: 90));
+    final timeStr = '${_formatTime24(slot)} - ${_formatTime24(endTime)}';
+
     return Material(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: bgColor,
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: () async {
           if (isOwner) {
@@ -536,30 +571,40 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
           }
         },
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child:
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
               Text(
-                  '${_formatTime12(slot)} - ${_formatTime12(slot.add(const Duration(minutes: 90)))}',
-                  style: theme.textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              if (isConfirmed)
-                Text('رزرو شده توسط: ${booking.bookerName}',
-                    style:
-                        TextStyle(color: color, fontWeight: FontWeight.bold))
-              else
-                Text(status,
-                    style:
-                        TextStyle(color: color, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text('قیمت: ${_toPersian(price.toStringAsFixed(0))} ؋',
-                  style: theme.textTheme.bodySmall),
-            ]),
-            if (action != null) action,
-          ]),
+                timeStr,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              Row(
+                children: [
+                  Text(
+                    statusLabel,
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                  if (isConfirmed && isOwner) 
+                     Padding(
+                       padding: const EdgeInsets.only(right: 8.0),
+                       child: Text(
+                         '(${booking.bookerName})',
+                         style: const TextStyle(fontSize: 10),
+                       ),
+                     )
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -707,13 +752,13 @@ class _BookingConfirmationDialogState
               Text(widget.field.name,
                   style: Theme.of(context)
                       .textTheme
-                      .titleLarge
+                      .titleMedium
                       ?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text('تاریخ: ${_toShamsi(widget.slot)}'),
-              Text('ساعت: ${_formatTime12(widget.slot)}'),
+              Text('تاریخ: ${_toShamsi(widget.slot)}', style: Theme.of(context).textTheme.bodySmall),
+              Text('ساعت: ${_formatTime12(widget.slot)}', style: Theme.of(context).textTheme.bodySmall),
               Text(
-                  'قیمت: ${_toPersian(widget.price.toStringAsFixed(0))} ؋'),
+                  'قیمت: ${_toPersian(widget.price.toStringAsFixed(0))} ؋', style: Theme.of(context).textTheme.bodySmall),
               const Divider(height: 24),
               TextFormField(
                   controller: _name,

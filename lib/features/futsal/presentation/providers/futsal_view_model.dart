@@ -33,6 +33,9 @@ class FutsalViewModel extends ChangeNotifier {
 
   void listenToFutsalFields() {
     _subscription = getFutsalFieldsUseCase().listen((fields) async {
+      // Sort fields by rating in descending order (highest to lowest)
+      fields.sort((a, b) => b.rating.compareTo(a.rating));
+      
       _fields = fields;
       await _loadFavoriteStatus();
       _isLoading = false;

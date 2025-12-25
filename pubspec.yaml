@@ -33,9 +33,16 @@ dependencies:
   flutter_local_notifications: ^17.1.2
 
 dev_dependencies:
+  flutter_launcher_icons: ^0.13.1
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"
+
 flutter:
 
   uses-material-design: true

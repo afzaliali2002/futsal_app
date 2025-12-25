@@ -1,45 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:futsal_app/core/services/cloudinary_service.dart';
+import 'package:futsal_app/features/futsal/domain/entities/futsal_field.dart';
+import 'package:futsal_app/features/futsal/presentation/providers/futsal_view_model.dart';
 import 'package:futsal_app/features/futsal/presentation/screens/field_detail_screen.dart';
+import 'package:futsal_app/features/futsal/presentation/widgets/futsal_field_card.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:futsal_app/features/futsal/data/repositories/futsal_repository_impl.dart';
-import 'package:futsal_app/features/futsal/domain/usecases/search_futsal_fields_usecase.dart';
-import '../providers/search_provider.dart';
-import '../../../futsal/domain/entities/futsal_field.dart';
-import '../../../futsal/presentation/widgets/futsal_card.dart';
 
-class SearchScreen extends StatelessWidget {
+class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => SearchProvider(
-        SearchFutsalFieldsUseCase(
-          FutsalRepositoryImpl(
-            firestore: FirebaseFirestore.instance,
-            cloudinary: cloudinary,
-          ),
-        ),
-      ),
-      child: const _SearchScreenContent(),
-    );
-  }
+  State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenContent extends StatefulWidget {
-  const _SearchScreenContent();
-
-  @override
-  State<_SearchScreenContent> createState() => _SearchScreenContentState();
-}
-
-class _SearchScreenContentState extends State<_SearchScreenContent> {
+class _SearchScreenState extends State<SearchScreen> {
   final _searchController = TextEditingController();
 
   // Filter State
-  RangeValues _priceRange = const RangeValues(100, 1500);
+  RangeValues _priceRange = const RangeValues(0, 5000); // Expanded range
   String? _selectedCity;
 
   // Cities list
@@ -57,18 +34,15 @@ class _SearchScreenContentState extends State<_SearchScreenContent> {
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(_onSearchChanged);
+    _searchController.addListener(() {
+      setState(() {}); // Rebuild on text change
+    });
   }
 
   @override
   void dispose() {
-    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _onSearchChanged() {
-    context.read<SearchProvider>().performSearch(_searchController.text);
   }
 
   void _showFilterSheet() {
@@ -99,7 +73,7 @@ class _SearchScreenContentState extends State<_SearchScreenContent> {
                       TextButton(
                         onPressed: () {
                           setState(() {
-                            _priceRange = const RangeValues(100, 1500);
+                            _priceRange = const RangeValues(0, 5000);
                             _selectedCity = null;
                             _isFilterActive = false;
                           });
@@ -118,8 +92,8 @@ class _SearchScreenContentState extends State<_SearchScreenContent> {
                 RangeSlider(
                   values: _priceRange,
                   min: 0,
-                  max: 2000,
-                  divisions: 40,
+                  max: 5000,
+                  divisions: 50,
                   labels: RangeLabels(
                     _priceRange.start.round().toString(),
                     _priceRange.end.round().toString(),
@@ -150,8 +124,6 @@ class _SearchScreenContentState extends State<_SearchScreenContent> {
                 ElevatedButton(
                   onPressed: () {
                     setState(() {
-                      _priceRange = _priceRange;
-                      _selectedCity = _selectedCity;
                       _isFilterActive = true;
                     });
                     Navigator.pop(context);
@@ -170,31 +142,48 @@ class _SearchScreenContentState extends State<_SearchScreenContent> {
     );
   }
 
-  List<FutsalField> _getFilteredResults(List<FutsalField> results) {
-    if (!_isFilterActive) return results;
+  List<FutsalField> _getFilteredResults(List<FutsalField> allFields) {
+    final query = _searchController.text.trim().toLowerCase();
+    
+    // If no query and no filter, return empty or all? User said "Search now", so usually empty until typed.
+    // But if filter is active, show filtered results even if query is empty.
+    if (query.isEmpty && !_isFilterActive) {
+      return []; 
+    }
 
-    return results.where((field) {
-      // 1. Price
-      if (field.pricePerHour < _priceRange.start || field.pricePerHour > _priceRange.end) {
-        return false;
+    return allFields.where((field) {
+      // 1. Text Search (Contains) - Fix for "ولیعصر" finding "سالن ولیعصر"
+      if (query.isNotEmpty) {
+        final name = field.name.toLowerCase();
+        final address = field.address.toLowerCase();
+        // Check if query is contained in name or address
+        if (!name.contains(query) && !address.contains(query)) {
+           return false;
+        }
       }
 
-      // 2. City
-      if (_selectedCity != null) {
-        final engCity = _selectedCity!.toLowerCase();
-        final faCity = _cityLabels[_selectedCity!]?.toLowerCase() ?? engCity;
-        
-        final city = field.city.toLowerCase();
-        final address = field.address.toLowerCase();
-
-        // Check against both English and Persian names
-        bool matches = city.contains(engCity) || 
-                       city.contains(faCity) || 
-                       address.contains(engCity) || 
-                       address.contains(faCity);
-
-        if (!matches) {
+      // 2. Filter: Price
+      if (_isFilterActive) {
+        if (field.pricePerHour < _priceRange.start || field.pricePerHour > _priceRange.end) {
           return false;
+        }
+
+        // 3. Filter: City
+        if (_selectedCity != null) {
+          final engCity = _selectedCity!.toLowerCase();
+          final faCity = _cityLabels[_selectedCity!]?.toLowerCase() ?? engCity;
+          
+          final city = field.city.toLowerCase();
+          final address = field.address.toLowerCase();
+
+          bool matches = city.contains(engCity) || 
+                         city.contains(faCity) || 
+                         address.contains(engCity) || 
+                         address.contains(faCity);
+
+          if (!matches) {
+            return false;
+          }
         }
       }
 
@@ -205,8 +194,8 @@ class _SearchScreenContentState extends State<_SearchScreenContent> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final searchProvider = context.watch<SearchProvider>();
-    final results = _getFilteredResults(searchProvider.results);
+    final futsalViewModel = context.watch<FutsalViewModel>();
+    final results = _getFilteredResults(futsalViewModel.fields);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -237,13 +226,12 @@ class _SearchScreenContentState extends State<_SearchScreenContent> {
                         prefixIcon: const Icon(Icons.search),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        suffixIcon: searchProvider.searchQuery.isNotEmpty
+                        suffixIcon: _searchController.text.isNotEmpty
                             ? IconButton(
                             icon: const Icon(Icons.clear),
                             onPressed: () => _searchController.clear())
                             : null,
                       ),
-                      onChanged: (_) {}, // already handled by listener
                     ),
                   ),
                 ),
@@ -270,7 +258,7 @@ class _SearchScreenContentState extends State<_SearchScreenContent> {
           ),
 
           // Results Info
-          if (_isFilterActive && results.isNotEmpty)
+          if ((_searchController.text.isNotEmpty || _isFilterActive) && results.isNotEmpty)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 4.0),
@@ -283,36 +271,15 @@ class _SearchScreenContentState extends State<_SearchScreenContent> {
 
           // Results
           Expanded(
-            child: _buildBody(searchProvider, results),
+            child: _buildBody(results),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBody(SearchProvider searchProvider, List<FutsalField> results) {
-    if (searchProvider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (searchProvider.error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            const Text('مشکلی پیش آمد'),
-            TextButton(
-              onPressed: _onSearchChanged,
-              child: const Text('تلاش مجدد'),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (searchProvider.searchQuery.isEmpty) {
+  Widget _buildBody(List<FutsalField> results) {
+    if (_searchController.text.isEmpty && !_isFilterActive) {
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -334,9 +301,7 @@ class _SearchScreenContentState extends State<_SearchScreenContent> {
             const Icon(Icons.sentiment_dissatisfied, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             Text(
-              searchProvider.results.isEmpty
-                  ? 'نتیجه‌ای یافت نشد'
-                  : 'با فیلترهای انتخاب شده موردی یافت نشد',
+              'نتیجه‌ای یافت نشد',
               style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
           ],
@@ -349,8 +314,7 @@ class _SearchScreenContentState extends State<_SearchScreenContent> {
       itemCount: results.length,
       itemBuilder: (context, index) {
         final field = results[index];
-        return FutsalCard(
-          field: field,
+        return GestureDetector(
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -358,6 +322,7 @@ class _SearchScreenContentState extends State<_SearchScreenContent> {
               ),
             );
           },
+          child: FutsalFieldCard(field: field),
         );
       },
     );

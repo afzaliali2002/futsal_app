@@ -4,8 +4,9 @@ import 'package:futsal_app/features/admin/presentation/screens/admin_dashboard_s
 import 'package:futsal_app/features/futsal/presentation/providers/futsal_view_model.dart';
 import 'package:futsal_app/features/futsal/presentation/screens/add_futsal_ground_screen.dart';
 import 'package:futsal_app/features/futsal/presentation/screens/field_detail_screen.dart';
+import 'package:futsal_app/features/notification/presentation/providers/notification_view_model.dart';
+import 'package:futsal_app/features/notification/presentation/screens/notification_screen.dart';
 import 'package:futsal_app/features/profile/data/models/user_role.dart';
-import 'package:futsal_app/features/profile/presentation/screens/profile_screen.dart';
 import 'package:futsal_app/features/profile/presentation/view_models/user_view_model.dart';
 import 'package:futsal_app/features/search/presentation/screens/search_screen.dart';
 import 'package:provider/provider.dart';
@@ -18,8 +19,10 @@ class FutsalListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userViewModel = context.watch<UserViewModel>();
-    final isAdmin = userViewModel.user?.role == UserRole.admin;
-    final isGroundOwner = userViewModel.user?.role == UserRole.groundOwner;
+    final notificationViewModel = context.watch<NotificationViewModel>();
+    final user = userViewModel.user;
+    final isAdmin = user?.role == UserRole.admin;
+    final isGroundOwner = user?.role == UserRole.groundOwner;
     final canAddGround = isGroundOwner || isAdmin;
 
     return Scaffold(
@@ -34,9 +37,44 @@ class FutsalListScreen extends StatelessWidget {
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.person_outline),
+          icon: StreamBuilder<int>(
+            stream: user != null ? notificationViewModel.getUnreadNotificationsCount(user.uid) : Stream.value(0),
+            builder: (context, snapshot) {
+              final count = snapshot.data ?? 0;
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.notifications_outlined),
+                  if (count > 0)
+                    Positioned(
+                      top: -4,
+                      right: -4,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          count.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
           onPressed: () {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationScreen()));
           },
         ),
         actions: [
@@ -54,7 +92,7 @@ class FutsalListScreen extends StatelessWidget {
               },
             ),
           if (isGroundOwner)
-             IconButton(
+            IconButton(
               icon: const Icon(Icons.dashboard_customize_outlined),
               onPressed: () {
                 Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GroundOwnerDashboardScreen()));
@@ -98,22 +136,96 @@ class FutsalListScreen extends StatelessWidget {
           );
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.only(bottom: 80), // Padding for FloatingActionButton
-          itemCount: vm.fields.length,
-          itemBuilder: (context, index) {
-            final field = vm.fields[index];
-            return GestureDetector(
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => FieldDetailScreen(field: field),
+        final topRatedFields = vm.fields.where((f) => f.rating >= 3.5).toList();
+        final allFields = vm.fields;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 80),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Rated Section (Horizontal Scroll)
+              if (topRatedFields.isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'برترین زمین‌ها',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // TODO: Navigate to All Top Rated Screen
+                        }, 
+                        child: const Text('مشاهده همه'),
+                      ),
+                    ],
                   ),
-                );
-              },
-              child: FutsalFieldCard(field: field),
-            );
-          },
+                ),
+                SizedBox(
+                  height: 300, // Reduced height for the section (was 340)
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    itemCount: topRatedFields.length,
+                    itemBuilder: (context, index) {
+                      final field = topRatedFields[index];
+                      return SizedBox(
+                        width: 260, // Reduced width for horizontal cards (was 300)
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => FieldDetailScreen(field: field),
+                              ),
+                            );
+                          },
+                          child: FutsalFieldCard(field: field, isCompact: true), // Pass compact flag if needed
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+
+              // All Grounds / Nearby Section (Vertical)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+                child: const Text(
+                  'همه زمین‌ها',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                itemCount: allFields.length,
+                itemBuilder: (context, index) {
+                  final field = allFields[index];
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => FieldDetailScreen(field: field),
+                        ),
+                      );
+                    },
+                    child: FutsalFieldCard(field: field),
+                  );
+                },
+              ),
+            ],
+          ),
         );
       },
     );

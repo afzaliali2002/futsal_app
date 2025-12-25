@@ -190,6 +190,28 @@ class _GroundManagementScreenState extends State<GroundManagementScreen> {
     return _toPersian(formattedString);
   }
 
+  // New helper method to find slot price
+  double _getSlotPrice(FutsalField field, DateTime slot) {
+    final day = DateFormat.EEEE('en_US').format(slot).toLowerCase();
+    final schedule = field.schedule?[day];
+    if (schedule == null) return field.pricePerHour;
+
+    final slotStartMinutes = slot.hour * 60 + slot.minute;
+
+    for (final tr in schedule) {
+      final startMinutes = tr.start.hour * 60 + tr.start.minute;
+      final endMinutes = tr.end.hour * 60 + tr.end.minute;
+      
+      // Handle simple day ranges (no midnight crossing logic here for simplicity, assuming typical operating hours)
+      // Check if the slot starts within this range [start, end)
+      // Note: _generateTimeSlots generates slots based on these ranges, so exact matches or inclusion is expected.
+      if (slotStartMinutes >= startMinutes && slotStartMinutes < endMinutes) {
+        return tr.price ?? field.pricePerHour;
+      }
+    }
+    return field.pricePerHour;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -214,7 +236,6 @@ class _GroundManagementScreenState extends State<GroundManagementScreen> {
         child: StreamBuilder<List<BookingModel>>(
             stream: bookingViewModel.getBookings(field.id, DateTime.now()),
             builder: (context, snapshot) {
-              // FIX: Only count bookings that are confirmed or completed
               final confirmedBookings = snapshot.data?.where((b) => 
                 b.status == BookingStatus.confirmed || 
                 b.status == BookingStatus.completed
@@ -382,6 +403,9 @@ class _GroundManagementScreenState extends State<GroundManagementScreen> {
                   statusText = 'قابل دسترس';
                   statusColor = Colors.green;
                 }
+                
+                // Fetch the specific price for this slot
+                final slotPrice = _getSlotPrice(field, slot);
 
                 return ListTile(
                   onTap: () => Navigator.of(context).push(MaterialPageRoute(
@@ -390,11 +414,13 @@ class _GroundManagementScreenState extends State<GroundManagementScreen> {
                       field: field,
                       booking: booking.id.isNotEmpty ? booking : null,
                       blockedSlot: isBlocked ? blockedSlot : null,
+                      price: slotPrice, // Pass the specific price to SlotDetailsScreen
                     ),
                   )),
                   leading: Icon(Icons.access_time, color: Theme.of(context).colorScheme.primary),
                   title: Text('${_formatDateTimeToPersian12Hour(slot)} - ${_formatDateTimeToPersian12Hour(slot.add(const Duration(minutes: 90)))}'),
-                  subtitle: Text(statusText, style: TextStyle(color: statusColor)),
+                  // Display the price in subtitle
+                  subtitle: Text('$statusText - ${_toPersian(slotPrice.toStringAsFixed(0))} ؋', style: TextStyle(color: statusColor)),
                   trailing: const Icon(Icons.chevron_right),
                 );
               },
