@@ -63,8 +63,50 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _setUserOnline(true);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _setUserOnline(true);
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      _setUserOnline(false);
+    }
+  }
+
+  Future<void> _setUserOnline(bool isOnline) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({'isOnline': isOnline});
+      } catch (e) {
+        debugPrint('Error updating user online status: $e');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

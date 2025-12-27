@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:futsal_app/features/profile/data/models/user_role.dart';
 import 'package:provider/provider.dart';
 
+import '../../../auth/presentation/screens/notifications_screen.dart'; // This import is likely incorrect if the file is not there.
+import '../../../notification/presentation/screens/notification_screen.dart'; // Correct import based on file search
 import '../providers/profile_provider.dart';
 import '../widgets/profile_header.dart';
 import 'edit_profile_screen.dart';
@@ -90,6 +92,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         title: 'رزرو های من',
                                         icon: Icons.history_outlined,
                                         onTap: () => _navigateTo(const MyBookingsScreen()),
+                                      ),
+                                      _ProfileMenuItem(
+                                        title: 'اعلانات',
+                                        icon: Icons.notifications_outlined,
+                                        onTap: () => _navigateTo(const NotificationScreen()),
+                                      ),
+                                      _ProfileMenuItem(
+                                        title: 'راهنما و پشتیبانی',
+                                        icon: Icons.help_outline,
+                                        onTap: () {
+                                          // TODO: Navigate to Help screen
+                                        },
+                                      ),
+                                      _ProfileMenuItem(
+                                        title: 'درباره ما',
+                                        icon: Icons.info_outline,
+                                        onTap: () {
+                                          // TODO: Navigate to About screen
+                                        },
                                       ),
                                       _ProfileMenuItem(
                                         title: 'تنظیمات',

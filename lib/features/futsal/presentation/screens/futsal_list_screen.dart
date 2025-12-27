@@ -1,9 +1,9 @@
-
 import 'package:flutter/material.dart';
 import 'package:futsal_app/features/admin/presentation/screens/admin_dashboard_screen.dart';
 import 'package:futsal_app/features/futsal/presentation/providers/futsal_view_model.dart';
 import 'package:futsal_app/features/futsal/presentation/screens/add_futsal_ground_screen.dart';
 import 'package:futsal_app/features/futsal/presentation/screens/field_detail_screen.dart';
+import 'package:futsal_app/features/futsal/presentation/screens/top_futsal_fields_screen.dart';
 import 'package:futsal_app/features/notification/presentation/providers/notification_view_model.dart';
 import 'package:futsal_app/features/notification/presentation/screens/notification_screen.dart';
 import 'package:futsal_app/features/profile/data/models/user_role.dart';
@@ -160,7 +160,7 @@ class FutsalListScreen extends StatelessWidget {
                       ),
                       TextButton(
                         onPressed: () {
-                          // TODO: Navigate to All Top Rated Screen
+                          Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TopFutsalFieldsScreen()));
                         }, 
                         child: const Text('مشاهده همه'),
                       ),
@@ -205,10 +205,16 @@ class FutsalListScreen extends StatelessWidget {
                 ),
               ),
               
-              ListView.builder(
+              GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.zero,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.7,
+                ),
                 itemCount: allFields.length,
                 itemBuilder: (context, index) {
                   final field = allFields[index];
@@ -220,7 +226,7 @@ class FutsalListScreen extends StatelessWidget {
                         ),
                       );
                     },
-                    child: FutsalFieldCard(field: field),
+                    child: FutsalFieldCard(field: field, isCompact: true),
                   );
                 },
               ),

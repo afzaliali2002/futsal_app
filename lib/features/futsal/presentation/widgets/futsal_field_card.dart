@@ -74,7 +74,7 @@ class FutsalFieldCard extends StatelessWidget {
           Stack(
             children: [
               SizedBox(
-                height: isCompact ? 130 : 150, 
+                height: isCompact ? 110 : 150, // Reduced height for compact mode
                 width: double.infinity,
                 child: field.coverImageUrl.isNotEmpty
                     ? Image.network(
@@ -142,141 +142,154 @@ class FutsalFieldCard extends StatelessWidget {
           ),
           
           // Info Area
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        field.name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold, 
-                          fontSize: 15, 
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.location_on_outlined, 
-                      size: 12, 
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        displayAddress,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
-                          fontSize: 11,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                
-                // Features Grid (Only for Top Grounds)
-                if (showFeatures) ...[
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: features.take(3).map((feature) {
-                       return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: Colors.blue.withOpacity(0.2), width: 0.5),
-                          ),
-                          child: Text(
-                            _translateFeature(feature), 
-                            style: TextStyle(
-                              color: Colors.blue[700],
-                              fontSize: 9, 
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        );
-                    }).toList(),
-                  ),
-                ],
-
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (availableToday)
-                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+          Flexible( // Added Flexible to prevent overflow
+            fit: FlexFit.loose,
+            child: Padding(
+              padding: const EdgeInsets.all(8), // Reduced padding
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min, // Ensure minimum size
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
                         child: Text(
-                          'امروز موجود است', 
-                          style: TextStyle(
-                            color: Colors.green[700],
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                            fontFamily: theme.textTheme.bodySmall?.fontFamily,
+                          field.name,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold, 
+                            fontSize: 14, // Slightly smaller font
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                       )
-                    else 
-                       // Visual Time Management Hint
-                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2), // Reduced spacing
+                  Row(
+                    children: [
+                      Icon(Icons.location_on_outlined, 
+                        size: 12, 
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 2),
+                      Expanded(
+                        child: Text(
+                          displayAddress,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                            fontSize: 10, // Smaller font
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                             Icon(Icons.access_time, size: 10, color: Colors.orange[800]),
-                             const SizedBox(width: 2),
-                             Text(
-                              'برنامه زمانی', 
+                      ),
+                    ],
+                  ),
+                  
+                  // Features Grid (Only for Top Grounds and NOT compact)
+                  if (showFeatures && !isCompact) ...[
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: features.take(3).map((feature) {
+                         return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.blue.withOpacity(0.2), width: 0.5),
+                            ),
+                            child: Text(
+                              _translateFeature(feature), 
                               style: TextStyle(
-                                color: Colors.orange[800],
-                                fontSize: 9,
+                                color: Colors.blue[700],
+                                fontSize: 8, 
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          );
+                      }).toList(),
+                    ),
+                  ],
+          
+                  const SizedBox(height: 6), // Reduced spacing
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (availableToday)
+                         Expanded( // Wrapped in Expanded
+                           child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'امروز موجود', 
+                              style: TextStyle(
+                                color: Colors.green[700],
+                                fontSize: 8,
                                 fontWeight: FontWeight.w600,
                                 fontFamily: theme.textTheme.bodySmall?.fontFamily,
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ],
+                           ),
+                         )
+                      else 
+                         // Visual Time Management Hint
+                         Expanded( // Wrapped in Expanded
+                           child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                 Icon(Icons.access_time, size: 8, color: Colors.orange[800]),
+                                 const SizedBox(width: 2),
+                                 Flexible(
+                                   child: Text(
+                                    'برنامه زمانی', 
+                                    style: TextStyle(
+                                      color: Colors.orange[800],
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: theme.textTheme.bodySmall?.fontFamily,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                   ),
+                                 ),
+                              ],
+                            ),
+                           ),
+                         ),
+                         
+                      const SizedBox(width: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
                         ),
-                       ),
-                       
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        '${field.pricePerHour.toStringAsFixed(0)} ${field.currency}',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                          fontSize: 11,
+                        child: Text(
+                          '${field.pricePerHour.toStringAsFixed(0)} ${field.currency}',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                            fontSize: 10, // Smaller font
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],

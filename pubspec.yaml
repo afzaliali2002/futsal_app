@@ -31,6 +31,7 @@ dependencies:
   another_flushbar: ^1.12.30
   firebase_messaging: ^14.9.0
   flutter_local_notifications: ^17.1.2
+  fl_chart: ^0.66.2
 
 dev_dependencies:
   flutter_launcher_icons: ^0.13.1

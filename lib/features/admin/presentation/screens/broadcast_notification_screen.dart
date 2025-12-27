@@ -60,7 +60,7 @@ class _BroadcastNotificationScreenState extends State<BroadcastNotificationScree
               ],
             ),
             content: const Text(
-              'اعلان شما در صف ارسال قرار گرفت و به زودی برای همه کاربران ارسال می‌شود.',
+              'اعلان شما با موفقیت برای همه کاربران ارسال شد.',
               textAlign: TextAlign.center,
             ),
             actions: [

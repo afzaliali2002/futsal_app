@@ -21,6 +21,14 @@ class AuthRepositoryImpl implements AuthRepository {
     return _firebaseAuth.currentUser;
   }
 
+  Future<void> _updateUserOnlineStatus(String uid, bool isOnline) async {
+    try {
+      await _firestore.collection('users').doc(uid).update({'isOnline': isOnline});
+    } catch (e) {
+      // Ignore errors if document doesn't exist yet or network fails
+    }
+  }
+
   @override
   Future<User?> login(String email, String password) async {
     try {
@@ -28,6 +36,9 @@ class AuthRepositoryImpl implements AuthRepository {
         email: email,
         password: password,
       );
+      if (userCredential.user != null) {
+        await _updateUserOnlineStatus(userCredential.user!.uid, true);
+      }
       return userCredential.user;
     } on FirebaseAuthException catch (e) {
       rethrow;
@@ -49,7 +60,7 @@ class AuthRepositoryImpl implements AuthRepository {
           email: email,
           role: email == _adminEmail ? UserRole.admin : UserRole.user,
           avatarUrl: '',
-          isOnline: false,
+          isOnline: true, // Set to true on signup
           createdAt: DateTime.now(),
         );
         await _firestore.collection('users').doc(user.uid).set(newUser.toMap());
@@ -79,6 +90,9 @@ class AuthRepositoryImpl implements AuthRepository {
       );
 
       final userCredential = await _firebaseAuth.signInWithCredential(credential);
+      if (userCredential.user != null) {
+        await _updateUserOnlineStatus(userCredential.user!.uid, true);
+      }
       return userCredential.user;
     } on FirebaseAuthException catch (e) {
       await _googleSignIn.signOut();
@@ -110,10 +124,12 @@ class AuthRepositoryImpl implements AuthRepository {
             email: user.email ?? '',
             role: user.email == _adminEmail ? UserRole.admin : UserRole.user,
             avatarUrl: user.photoURL ?? '',
-            isOnline: false,
+            isOnline: true, // Set to true
             createdAt: DateTime.now(),
           );
           await _firestore.collection('users').doc(user.uid).set(newUser.toMap());
+        } else {
+           await _updateUserOnlineStatus(user.uid, true);
         }
       }
       return user;
@@ -125,11 +141,19 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signOutFromGoogle() async {
+    final user = _firebaseAuth.currentUser;
+    if (user != null) {
+      await _updateUserOnlineStatus(user.uid, false);
+    }
     await _googleSignIn.signOut();
   }
 
   @override
   Future<void> logout() async {
+    final user = _firebaseAuth.currentUser;
+    if (user != null) {
+      await _updateUserOnlineStatus(user.uid, false);
+    }
     await _googleSignIn.signOut();
     await _firebaseAuth.signOut();
   }
@@ -189,10 +213,12 @@ class AuthRepositoryImpl implements AuthRepository {
           email: user.phoneNumber ?? '', // Use phone number if email is null
           role: UserRole.user,
           avatarUrl: '',
-          isOnline: false,
+          isOnline: true, // Set to true
           createdAt: DateTime.now(),
         );
         await _firestore.collection('users').doc(user.uid).set(newUser.toMap());
+      } else {
+         await _updateUserOnlineStatus(user.uid, true);
       }
     }
     return userCredential;

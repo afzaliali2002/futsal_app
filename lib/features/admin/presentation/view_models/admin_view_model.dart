@@ -36,6 +36,12 @@ class AdminViewModel extends ChangeNotifier {
 
   String? _successMessage;
   String? get successMessage => _successMessage;
+  
+  // Getters for summary statistics
+  // Added getters for dashboard summary
+  int get totalUsersCount => _allUsers.length;
+  int get onlineUsersCount => _allUsers.where((u) => u.isOnline).length;
+  int get totalGroundsCount => _allGrounds.length;
 
   void clearSuccessMessage() {
     _successMessage = null;

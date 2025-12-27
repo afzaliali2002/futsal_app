@@ -24,7 +24,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       icon: Icons.calendar_today_rounded,
     ),
     OnboardingItem(
-      title: 'ویژه زمین‌داران',
+      title: 'ویژه سالن دار ها',
       description: 'زمین خود را ثبت کنید، سانس‌ها را مدیریت کنید و درآمد خود را افزایش دهید.',
       icon: Icons.business_center_rounded,
     ),

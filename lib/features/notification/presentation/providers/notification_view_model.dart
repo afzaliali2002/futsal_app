@@ -25,4 +25,8 @@ class NotificationViewModel extends ChangeNotifier {
   Future<void> markAllAsRead(String userId) async {
     await _notificationRepository.markAllAsRead(userId);
   }
+
+  Future<void> deleteNotification(String userId, String notificationId) async {
+    await _notificationRepository.deleteNotification(userId, notificationId);
+  }
 }

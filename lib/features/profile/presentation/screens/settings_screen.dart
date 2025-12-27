@@ -40,32 +40,6 @@ class SettingsScreen extends StatelessWidget {
               ),
             ]),
             const SizedBox(height: 30),
-            Text(
-              'عمومی',
-              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            _buildSettingsCard([
-              _buildSettingsItem(
-                context,
-                icon: Icons.notifications_outlined,
-                title: 'اعلانات',
-                onTap: () { /* TODO: Navigate to Notifications screen */ },
-              ),
-              _buildSettingsItem(
-                context,
-                icon: Icons.help_outline,
-                title: 'راهنما و پشتیبانی',
-                onTap: () { /* TODO: Navigate to Help screen */ },
-              ),
-              _buildSettingsItem(
-                context,
-                icon: Icons.info_outline,
-                title: 'درباره ما',
-                onTap: () { /* TODO: Navigate to About screen */ },
-              ),
-            ]),
-            const SizedBox(height: 30),
             _buildDangerZone(context),
           ],
         ),

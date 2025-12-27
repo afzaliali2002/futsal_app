@@ -109,11 +109,47 @@ class AdminRepositoryImpl implements AdminRepository {
     required String body,
     String? imageUrl,
   }) async {
-    await _firestore.collection('notifications_queue').add({
-      'title': title,
-      'body': body,
-      'imageUrl': imageUrl,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    // Directly add a notification document to EVERY user's subcollection
+    // bypassing the queue.
+    
+    // Fetch all user IDs
+    final usersSnapshot = await _firestore.collection('users').get();
+    
+    // Firestore batch object is single use and has a limit of 500 ops.
+    // We must handle pagination if > 500 users.
+    
+    const batchLimit = 400; // Safety margin
+    var batch = _firestore.batch();
+    int operationCount = 0;
+    
+    for (final doc in usersSnapshot.docs) {
+       final ref = _firestore
+          .collection('users')
+          .doc(doc.id)
+          .collection('notifications')
+          .doc(); // Auto ID
+          
+       batch.set(ref, {
+         'title': title,
+         'body': body,
+         'isRead': false,
+         'createdAt': DateTime.now().toIso8601String(),
+         'type': 'broadcast',
+         'metadata': {
+            'imageUrl': imageUrl,
+         },
+       });
+       operationCount++;
+       
+       if (operationCount >= batchLimit) {
+           await batch.commit();
+           batch = _firestore.batch(); // Create a new batch
+           operationCount = 0;
+       }
+    }
+    
+    if (operationCount > 0) {
+      await batch.commit();
+    }
   }
 }
